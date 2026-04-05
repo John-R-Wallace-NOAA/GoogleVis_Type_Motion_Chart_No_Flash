@@ -1,0 +1,930 @@
+# motionChart.R
+# A flash-free replacement for googleVis::gvisMotionChart using echarts4r.
+#
+# Architecture: all real data is passed to the browser once as compact JSON.
+# A JavaScript requestAnimationFrame loop interpolates between real time steps
+# client-side and calls echartsInstance.setOption() to update point positions.
+#
+# Author:  <you>
+# License: MIT
+# Depends: echarts4r (>= 0.4.0), dplyr, htmlwidgets, jsonlite
+
+# ── dependencies ─────────────────────────────────────────────────────────────
+for (pkg in c("echarts4r", "dplyr", "htmlwidgets", "jsonlite", "htmltools")) {
+  if (!requireNamespace(pkg, quietly = TRUE))
+    stop(sprintf("Install %s:  install.packages('%s')", pkg, pkg))
+}
+
+library(echarts4r)
+library(dplyr)
+
+
+# ── axis range helper ─────────────────────────────────────────────────────────
+
+#' Compute stable, nicely-rounded axis bounds across all time steps
+#'
+#' For log axes, bounds are rounded to the nearest "nice" power-of-10 step
+#' (floor for min, ceiling for max) so tick labels are clean integers.
+#' For linear axes, bounds are floored/ceilinged to a round number whose
+#' magnitude matches the data range.
+#'
+#' @param vals   Numeric vector of all values for one axis across every time step.
+#' @param log    Logical — is this a log-scale axis?
+#' @param pad    Extra padding: log-space decades (log) or range fraction (linear).
+#' @return Named list with \code{min} and \code{max}.
+axis_bounds <- function(vals, log = FALSE, pad = 0.05) {
+  if (log) {
+    vals <- vals[is.finite(vals) & vals > 0]
+  } else {
+    vals <- vals[is.finite(vals)]
+  }
+  lo <- min(vals, na.rm = TRUE)
+  hi <- max(vals, na.rm = TRUE)
+
+  if (log) {
+    # Round outward to whole decades (integer log10) so bounds always land on
+    # clean powers of 10: 100, 1000, 10000 etc.  Half-decade steps like 3162
+    # are valid mathematically but ECharts can't place a clean tick label there.
+    log_lo  <- log10(lo) - pad
+    log_hi  <- log10(hi) + pad
+    nice_lo <- floor(log_lo)      # whole decade floor
+    nice_hi <- ceiling(log_hi)    # whole decade ceiling
+    list(min = 10^nice_lo, max = 10^nice_hi)
+  } else {
+    rng       <- hi - lo
+    padded_lo <- lo - pad * rng
+    padded_hi <- hi + pad * rng
+    magnitude <- 10^floor(log10(max(abs(rng), 1e-9)))
+    step      <- magnitude / 2
+    nice_lo   <- floor(padded_lo   / step) * step
+    nice_hi   <- ceiling(padded_hi / step) * step
+    list(min = nice_lo, max = nice_hi)
+  }
+}
+
+
+# ── auto label-size helper ────────────────────────────────────────────────────
+
+#' Choose a default label font size based on entity count
+#'
+#' Fewer entities → larger labels; crowded charts → smaller labels.
+#' The user can always override interactively with the A- / A+ buttons.
+#'
+#' @param n Integer number of entities.
+#' @return Integer font size in pixels.
+auto_label_size <- function(n) {
+  if      (n <=  10) 19L
+  else if (n <=  20) 18L
+  else if (n <=  40) 17L
+  else if (n <=  80) 16L
+  else if (n <= 140) 15L
+  else               14L
+}
+
+
+# ── main function ─────────────────────────────────────────────────────────────
+
+#' Motion Chart (flash-free gvisMotionChart replacement)
+#'
+#' Renders an animated, interactive bubble chart via ECharts / echarts4r.
+#' Axis limits are fixed to global data bounds so they never jump during
+#' animation.  Entity label size is auto-selected from entity count and can
+#' be adjusted interactively with A- / A+ buttons in the control bar.
+#'
+#' @param data       Data frame in long format (one row per entity per time step).
+#' @param id         Column name for the entity identifier (e.g. "country").
+#' @param time       Column name for the time variable (must be numeric).
+#' @param x          Column name for the x-axis variable.
+#' @param y          Column name for the y-axis variable.
+#' @param size       Column name for bubble size.  NULL = uniform size.
+#' @param color      Column name for categorical colour grouping.  NULL = single colour.
+#' @param x_log      Use log scale on x-axis?  Default TRUE.
+#' @param y_log      Use log scale on y-axis?  Default FALSE.
+#' @param x_label    X-axis label.  Defaults to column name.
+#' @param y_label    Y-axis label.  Defaults to column name.
+#' @param size_scale   Length-2 numeric: min/max bubble radius in pixels. Default c(10, 60).
+#'                     The minimum of 10 keeps the smallest bubbles visible and clickable.
+#' @param duration     Total playback duration in ms for one full pass. Default 10000.
+#' @param label_size   Integer font size (px) for entity labels.  NULL = auto-select
+#'                     based on entity count (recommended).  Can be nudged at runtime
+#'                     with the A- / A+ buttons in the control bar.
+#' @param label_colour Logical.  If TRUE (default), each entity label is coloured to
+#'                     match its bubble (inherits the ECharts series colour).  If FALSE,
+#'                     all labels render in neutral dark grey ("#555").
+#' @param title        Optional chart title string.
+#' @param theme      echarts4r theme name.  Default "default".
+#' @param width      Widget width  (CSS).  Default "100\%".
+#' @param height     Widget height (CSS).  Default "600px".
+#'
+#' @return An echarts4r / htmlwidget object.
+#'
+#' @details
+#' **Fixed axes:** global min/max are computed in R across every time step and
+#' passed to ECharts as explicit \code{min}/\code{max} axis properties.
+#' ECharts' auto-scaling is therefore disabled and the axes never move during
+#' playback.
+#'
+#' **Label sizing:** the default font size is chosen by \code{auto_label_size()}
+#' which scales down as entity count grows.  The A- / A+ buttons in the control
+#' bar each step the size by 1 px and immediately re-render — useful for
+#' adjusting before a presentation without touching R code.
+#'
+#' @examples
+#' \dontrun{
+#' library(gapminder)
+#' motionChart(gapminder,
+#'             id       = "country",
+#'             time     = "year",
+#'             x        = "gdpPercap",
+#'             y        = "lifeExp",
+#'             size     = "pop",
+#'             color    = "continent",
+#'             duration = 12000,
+#'             title    = "Gapminder — Health & Wealth of Nations")
+#' }
+motionChart <- function(data,
+                        id,
+                        time,
+                        x,
+                        y,
+                        size       = NULL,
+                        color      = NULL,
+                        x_log      = TRUE,
+                        y_log      = FALSE,
+                        x_label    = NULL,
+                        y_label    = NULL,
+                        size_scale    = c(10, 60),
+                        duration      = 17000L,
+                        label_size    = NULL,
+                        label_colour  = TRUE,
+                        trails        = TRUE,
+                        trail_length  = 4L,
+                        hover_focus   = c("group", "entity")[1],
+                        tooltip_follow = FALSE,
+                        title         = NULL,
+                        theme      = "default",
+                        width      = "100%",
+                        height     = "600px") {
+
+  # ── 0. validate ────────────────────────────────────────────────────────────
+  stopifnot(is.data.frame(data))
+  for (col in c(id, time, x, y))
+    if (!col %in% names(data)) stop("Column not found: ", col)
+  if (!is.null(size)  && !size  %in% names(data)) stop("size column not found: ",  size)
+  if (!is.null(color) && !color %in% names(data)) stop("color column not found: ", color)
+  hover_focus <- match.arg(hover_focus, c("group", "entity"))
+
+  # Apply str_to_title to default labels so "gdpPercap" → "GdpPercap",
+  # "lifeExp" → "LifeExp", "year" → "Year".  Explicit values are used as-is.
+  if (!requireNamespace("stringr", quietly = TRUE)) {
+    # base R fallback if stringr not available
+    title_case <- function(s) paste0(toupper(substr(s, 1, 1)), substr(s, 2, nchar(s)))
+  } else {
+    title_case <- stringr::str_to_title
+  }
+  if (is.null(x_label))    x_label    <- title_case(x)
+  if (is.null(y_label))    y_label    <- title_case(y)
+  time_label <- title_case(time)
+
+  # ── 1. select & arrange ────────────────────────────────────────────────────
+  df <- data %>%
+    dplyr::select(dplyr::all_of(c(id, time, x, y, size, color))) %>%
+    dplyr::arrange(.data[[time]], .data[[id]])
+
+  # ── 2. colour groups ───────────────────────────────────────────────────────
+  if (!is.null(color)) {
+    groups <- as.character(sort(unique(df[[color]])))
+  } else {
+    df$.group <- "All"
+    color     <- ".group"
+    groups    <- "All"
+  }
+
+  # ── 3. size normalisation (global across all time steps) ──────────────────
+  if (!is.null(size)) {
+    s_vals <- df[[size]]
+    s_min  <- min(s_vals, na.rm = TRUE)
+    s_max  <- max(s_vals, na.rm = TRUE)
+    df$.size_px <- size_scale[1] +
+      (s_vals - s_min) / (s_max - s_min + .Machine$double.eps) *
+      (size_scale[2] - size_scale[1])
+  } else {
+    df$.size_px <- mean(size_scale)
+  }
+
+  # ── 4. fixed axis bounds (computed once across ALL time steps) ────────────
+  x_bounds <- axis_bounds(df[[x]], log = x_log)
+  y_bounds <- axis_bounds(df[[y]], log = y_log)
+
+  # ── 5. auto label size ────────────────────────────────────────────────────
+  n_entities <- length(unique(df[[id]]))
+  init_label_size <- if (!is.null(label_size)) as.integer(label_size)
+                     else auto_label_size(n_entities)
+
+  # ── 6. build entity list for JS ───────────────────────────────────────────
+  time_steps <- sort(unique(df[[time]]))
+  entity_ids <- sort(unique(df[[id]]))
+
+  entity_list <- lapply(entity_ids, function(eid) {
+    rows <- df[as.character(df[[id]]) == as.character(eid), , drop = FALSE]
+    rows <- rows[order(rows[[time]]), ]
+    list(
+      id     = as.character(eid),
+      group  = as.character(rows[[color]][1]),
+      frames = lapply(seq_len(nrow(rows)), function(i)
+        list(t = rows[[time]][i],
+             x = rows[[x]][i],
+             y = rows[[y]][i],
+             r = rows$.size_px[i]))
+    )
+  })
+
+  # ── 7. initial ECharts option ─────────────────────────────────────────────
+  # When label_colour = TRUE we pass color:"inherit" — ECharts will use the
+  # series colour automatically.  "inherit" is the ECharts keyword for this.
+  label_color_val <- if (isTRUE(label_colour)) "inherit" else "#555"
+
+  # ── ECharts 5 default palette ─────────────────────────────────────────────
+  # Assign colours explicitly in R so every series type (bubble, trail line,
+  # trail ghost) gets the exact same colour for its group.  This is the only
+  # reliable approach — reading colours back from the rendered chart is fragile.
+  echarts_palette <- c("#5470c6","#91cc75","#fac858","#ee6666","#73c0de",
+                       "#3ba272","#fc8452","#9a60b4","#ea7ccc")
+  group_colors <- setNames(
+    echarts_palette[((seq_along(groups) - 1) %% length(echarts_palette)) + 1],
+    groups
+  )
+
+  # ── bubble series (one per group) ─────────────────────────────────────────
+  bubble_series <- lapply(groups, function(grp) {
+    list(
+      name       = grp,
+      type       = "scatter",
+      color      = group_colors[[grp]],
+      symbolSize = htmlwidgets::JS("function(v){ return v[2]; }"),
+      emphasis   = list(disabled = TRUE),   # we handle highlight ourselves
+      blur       = list(itemStyle = list(opacity = 1)),  # prevent ECharts dimming
+      label      = list(
+        show      = TRUE,
+        formatter = htmlwidgets::JS("function(p){ return p.name; }"),
+        position  = "right",
+        fontSize  = init_label_size,
+        color     = label_color_val
+      ),
+      data = list()
+    )
+  })
+
+  # ── trail line series (one per group) ─────────────────────────────────────
+  trail_line_series <- lapply(groups, function(grp) {
+    list(
+      name            = paste0(".trail_line_", grp),
+      type            = "line",
+      color           = group_colors[[grp]],
+      showSymbol      = FALSE,
+      silent          = TRUE,
+      legendHoverLink = FALSE,
+      lineStyle       = list(width = 1.5, type = "solid", opacity = 0.5),
+      label           = list(show = FALSE),
+      emphasis        = list(disabled = TRUE),
+      data            = list()
+    )
+  })
+
+  # ── trail ghost series (one per group) ────────────────────────────────────
+  trail_ghost_series <- lapply(groups, function(grp) {
+    list(
+      name            = paste0(".trail_ghost_", grp),
+      type            = "scatter",
+      color           = group_colors[[grp]],
+      silent          = TRUE,
+      legendHoverLink = FALSE,
+      symbolSize      = htmlwidgets::JS("function(v){ return v[2]; }"),
+      label           = list(show = FALSE),
+      emphasis        = list(disabled = TRUE),
+      data            = list()
+    )
+  })
+
+  base_series <- c(trail_line_series, trail_ghost_series, bubble_series)
+
+  echart_option <- list(
+    animation = FALSE,
+    title = if (!is.null(title))
+              list(text = as.character(title), left = "center", top = 8)
+            else list(),
+    tooltip = list(show = FALSE),
+    legend = list(right = 10, top = 60, orient = "vertical",
+                  data      = as.list(groups),   # bubble series only
+                  textStyle = list(fontSize = 15)),
+
+    # ── fixed x axis ────────────────────────────────────────────────────────
+    # min/max are passed as JS functions rather than raw numbers.
+    # ECharts calls function(v){} with v.min / v.max = the data extent, and
+    # whatever we return becomes the axis bound.  Returning our pre-computed
+    # nice value as a *floor/ceiling* of that extent means ECharts' own tick
+    # generator sees the full intended range and rounds tick labels cleanly —
+    # the community-standard fix for the "max value not rounded" issue.
+    xAxis = list(
+      type         = if (x_log) "log" else "value",
+      min          = htmlwidgets::JS(sprintf("function(v){ return %s; }", x_bounds$min)),
+      max          = htmlwidgets::JS(sprintf("function(v){ return %s; }", x_bounds$max)),
+      name         = x_label,
+      nameGap      = 36,
+      nameLocation = "middle",
+      nameTextStyle = list(fontSize = 15),
+      splitLine    = list(show = FALSE),
+      axisLabel    = list(fontSize = 13),
+      axisLine     = list(lineStyle = list(width = 2)),
+      axisTick     = list(lineStyle = list(width = 2))
+    ),
+
+    # ── fixed y axis ────────────────────────────────────────────────────────
+    yAxis = list(
+      type         = if (y_log) "log" else "value",
+      min          = htmlwidgets::JS(sprintf("function(v){ return %s; }", y_bounds$min)),
+      max          = htmlwidgets::JS(sprintf("function(v){ return %s; }", y_bounds$max)),
+      name         = y_label,
+      nameGap      = 48,
+      nameLocation = "middle",
+      nameTextStyle = list(fontSize = 15),
+      splitLine    = list(lineStyle = list(type = "dashed")),
+      axisLabel    = list(fontSize = 13),
+      axisLine     = list(lineStyle = list(width = 2)),
+      axisTick     = list(lineStyle = list(width = 2))
+    ),
+
+    grid   = list(top = 80, bottom = 100, left = 80, right = 160),
+    series = base_series
+  )
+
+  # ── 8. build widget ────────────────────────────────────────────────────────
+  widget <- e_charts(width = width, height = height) |>
+    e_theme(theme) |>
+    e_list(echart_option)
+
+  # ── 9. JS animation + controls ────────────────────────────────────────────
+  # Use paste0() rather than sprintf() so that % in CSS (width:100%) and any
+  # Unicode characters in the JS string are never misread as format specifiers.
+  # R values are injected as named placeholders replaced via gsub().
+
+  js_template <- '
+function(el, x) {
+
+  // ── get echarts instance ───────────────────────────────────────────────
+  var chart = echarts.getInstanceByDom(el);
+  if (!chart) {
+    console.error("motionChart: could not get echarts instance");
+    return;
+  }
+
+  // ── embedded data ──────────────────────────────────────────────────────
+  var entities      = __ENTITIES__;
+  var timeSteps     = __TIMESTEPS__;
+  var groups        = __GROUPS__;
+  var groupColors   = __GROUPCOLORS__;  // injected from R — index matches groups[]
+  var duration      = __DURATION__;
+  var timeName      = "__TIMENAME__";
+  var labelFontSize = __LABELSIZE__;    // mutable via A-/A+ buttons
+  var labelColour   = __LABELCOLOUR__;  // true = inherit series colour
+  var showTrails    = __TRAILS__;       // mutable via Trails button
+  var trailLength   = __TRAILLENGTH__;  // real time steps to trail back
+  var hoverFocus    = __HOVERFOCUS__;   // "group" or "entity"
+  var tooltipFollow = __TOOLTIPFOLLOW__; // true = tip moves with bubble, false = upper right
+  var x_label_js    = "__XLABEL__";
+  var y_label_js    = "__YLABEL__";
+
+  // ── pinned tooltip div ────────────────────────────────────────────────
+  // A custom div that tracks the active bubble — avoids ECharts showTip
+  // feedback loop that causes flickering.
+  var pinnedTip = document.createElement("div");
+  pinnedTip.style.cssText = [
+    "position:absolute", "display:none", "pointer-events:none",
+    "top:90px", "right:170px",
+    "background:rgba(255,255,255,0.96)",
+    "color:#333",
+    "border:1px solid #ccc",
+    "padding:6px 10px", "border-radius:4px",
+    "font-size:13px", "font-family:sans-serif",
+    "line-height:1.5", "white-space:nowrap",
+    "width:fit-content",
+    "box-sizing:content-box", "z-index:9999",
+    "box-shadow:0 2px 8px rgba(0,0,0,0.15)"
+  ].join(";");
+  var tipContainer = el.parentNode || el;
+  tipContainer.style.position = "relative";
+  tipContainer.appendChild(pinnedTip);
+
+  // ── series index maps ──────────────────────────────────────────────────
+  // Series order in base_series: trail_line × nGroups, trail_ghost × nGroups,
+  // bubble × nGroups — must match the order built in R.
+  var nGroups = groups.length;
+  var grpIdx  = {};
+  for (var g = 0; g < nGroups; g++) grpIdx[groups[g]] = g;
+
+  function trailLineIdx(g)  { return g; }
+  function trailGhostIdx(g) { return nGroups + g; }
+  function bubbleIdx(g)     { return nGroups * 2 + g; }
+
+  // ── build control bar ─────────────────────────────────────────────────
+  var ctrlDiv = document.createElement("div");
+  ctrlDiv.style.cssText = [
+    "display:flex", "align-items:center", "gap:6px",
+    "padding:4px 80px 4px 80px",
+    "box-sizing:border-box", "width:100%",
+    "font-family:sans-serif"
+  ].join(";");
+
+  // play/pause
+  var playBtn = document.createElement("button");
+  playBtn.innerHTML = "&#9654;";
+  playBtn.title     = "Play / Pause";
+  playBtn.style.cssText = "font-size:18px;border:none;background:none;cursor:pointer;padding:0 4px;flex-shrink:0;";
+
+  // scrubber
+  var slider = document.createElement("input");
+  slider.type  = "range";
+  slider.min   = "0";
+  slider.max   = "10000";
+  slider.value = "0";
+  slider.style.cssText = "flex:1;cursor:pointer;";
+
+  // time readout
+  var timeLabel = document.createElement("span");
+  timeLabel.style.cssText = "font-size:13px;min-width:50px;text-align:right;white-space:nowrap;color:#888;";
+  timeLabel.textContent   = String(timeSteps[0]);
+
+  // separator
+  var sep = document.createElement("span");
+  sep.textContent   = "|";
+  sep.style.cssText = "color:#ccc;flex-shrink:0;";
+
+  // Trails toggle button
+  var trailsBtn = document.createElement("button");
+  trailsBtn.title = "Toggle trails";
+  function updateTrailsBtn() {
+    trailsBtn.textContent = showTrails ? "Trails ON" : "Trails OFF";
+    trailsBtn.style.cssText = [
+      "font-size:12px", "border:1px solid #ccc", "border-radius:3px",
+      "cursor:pointer", "padding:1px 7px", "flex-shrink:0",
+      showTrails ? "background:#d4ecd4;color:#1a6e1a;"
+                 : "background:#f8f8f8;color:#999;"
+    ].join(";");
+  }
+  updateTrailsBtn();
+
+  // separator 2
+  var sep2 = document.createElement("span");
+  sep2.textContent   = "|";
+  sep2.style.cssText = "color:#ccc;flex-shrink:0;";
+
+  // font-size label
+  var fsLabel = document.createElement("span");
+  fsLabel.style.cssText = "font-size:11px;color:#666;white-space:nowrap;";
+  fsLabel.textContent   = "label px";
+
+  // A- button
+  var btnSmaller = document.createElement("button");
+  btnSmaller.textContent = "A-";
+  btnSmaller.title       = "Decrease label size";
+  btnSmaller.style.cssText = "font-size:13px;border:1px solid #ccc;border-radius:3px;background:#f8f8f8;cursor:pointer;padding:1px 6px;flex-shrink:0;";
+
+  // font size readout
+  var fsReadout = document.createElement("span");
+  fsReadout.style.cssText = "font-size:12px;min-width:22px;text-align:center;";
+  fsReadout.textContent   = String(labelFontSize);
+
+  // A+ button
+  var btnLarger = document.createElement("button");
+  btnLarger.textContent = "A+";
+  btnLarger.title       = "Increase label size";
+  btnLarger.style.cssText = "font-size:13px;border:1px solid #ccc;border-radius:3px;background:#f8f8f8;cursor:pointer;padding:1px 6px;flex-shrink:0;";
+
+  ctrlDiv.appendChild(playBtn);
+  ctrlDiv.appendChild(slider);
+  ctrlDiv.appendChild(timeLabel);
+  ctrlDiv.appendChild(sep);
+  ctrlDiv.appendChild(trailsBtn);
+  ctrlDiv.appendChild(sep2);
+  ctrlDiv.appendChild(fsLabel);
+  ctrlDiv.appendChild(btnSmaller);
+  ctrlDiv.appendChild(fsReadout);
+  ctrlDiv.appendChild(btnLarger);
+
+  if (el.parentNode) {
+    el.parentNode.insertBefore(ctrlDiv, el.nextSibling);
+  }
+
+  // ── helpers ────────────────────────────────────────────────────────────
+  function lerp(a, b, t) { return a + (b - a) * t; }
+
+  // ── legend / click-highlight state ────────────────────────────────────
+  var legendSelected  = {};
+  var highlightedName = null;   // set by click — persists until clicked again
+  var hoverName       = null;   // set by mouseover — cleared on mouseout
+  var hoverGroup      = null;   // group of hovered entity (for "group" mode)
+  for (var g = 0; g < nGroups; g++) legendSelected[groups[g]] = true;
+
+  // Build entity-id → group lookup for fast access in mouseover
+  var entityGroupMap = {};
+  for (var e = 0; e < entities.length; e++) {
+    entityGroupMap[entities[e].id] = entities[e].group;
+  }
+
+  // Return interpolated {x,y,r} for entity at fractional timeline position prog.
+  function interpEntity(ent, prog) {
+    var maxIdx = timeSteps.length - 1;
+    var scaled = Math.max(0, Math.min(1, prog)) * maxIdx;
+    var idx0   = Math.min(Math.floor(scaled), maxIdx - 1);
+    var idx1   = idx0 + 1;
+    var alpha  = scaled - idx0;
+    var f0 = ent.frames[idx0], f1 = ent.frames[idx1];
+    if (!f0 || !f1) return null;
+    return {
+      x: lerp(f0.x, f1.x, alpha),
+      y: lerp(f0.y, f1.y, alpha),
+      r: lerp(f0.r, f1.r, alpha)
+    };
+  }
+
+  // Build prog values for the trail steps behind current prog.
+  function trailProgs(prog) {
+    var maxIdx   = timeSteps.length - 1;
+    var interval = 1.0 / maxIdx;
+    var steps    = [];
+    for (var s = 1; s <= trailLength; s++) {
+      var tp = prog - s * interval;
+      if (tp < 0) break;
+      steps.push(tp);
+    }
+    return steps;   // nearest → oldest
+  }
+
+  function buildSeriesData(prog) {
+    prog = Math.max(0, Math.min(1, prog));
+    var maxIdx   = timeSteps.length - 1;
+    var scaled   = prog * maxIdx;
+    var idx0     = Math.min(Math.floor(scaled), maxIdx - 1);
+    var idx1     = idx0 + 1;
+    var alpha    = scaled - idx0;
+    var tDisplay = lerp(timeSteps[idx0], timeSteps[idx1], alpha);
+
+    var bubbleData = [];
+    var lineData   = [];
+    var ghostData  = [];
+    for (var g = 0; g < nGroups; g++) {
+      bubbleData.push([]);
+      lineData.push({});
+      ghostData.push([]);
+    }
+
+    var tSteps = showTrails ? trailProgs(prog) : [];
+
+    for (var e = 0; e < entities.length; e++) {
+      var ent = entities[e];
+      var gi  = grpIdx[ent.group];
+      if (gi === undefined) continue;
+      if (!legendSelected[ent.group]) continue;
+
+      var cur = interpEntity(ent, prog);
+      if (!cur) continue;
+
+      // Determine visibility: click state takes priority over hover state.
+      // In "group" mode, hovering shows all entities in the hovered group.
+      // In "entity" mode, hovering shows only the hovered entity.
+      var isActive;
+      if (highlightedName !== null) {
+        // Click is locked — only the clicked entity is active
+        isActive = (ent.id === highlightedName);
+      } else if (hoverName !== null) {
+        if (hoverFocus === "group") {
+          isActive = (ent.group === hoverGroup);
+        } else {
+          isActive = (ent.id === hoverName);
+        }
+      } else {
+        isActive = true;
+      }
+
+      // Active points are pushed normally; inactive points are omitted entirely
+      // so ECharts has no data to hit-test against — tooltip cannot fire on them.
+      if (isActive) {
+        bubbleData[gi].push({
+          name  : ent.id,
+          value : [cur.x, cur.y, cur.r]
+        });
+      }
+
+      // Only draw trails for active entities
+      if (!showTrails || tSteps.length === 0) continue;
+      if (!isActive) continue;
+
+      var col      = groupColors[gi] || "#aaa";
+      var polyline = [];
+
+      for (var s = 0; s < tSteps.length; s++) {
+        var tp  = tSteps[s];
+        var pos = interpEntity(ent, tp);
+        if (!pos) continue;
+
+        // s=0 is nearest to bubble (brightest, largest)
+        // s=tSteps.length-1 is oldest (most faded, smallest)
+        var opacityFrac = s / Math.max(tSteps.length - 1, 1);  // 0=nearest → 1=oldest
+        var opacity     = 0.55 - opacityFrac * 0.45;           // 0.55 → 0.10
+        var ghostR      = pos.r * (0.95 - opacityFrac * 0.2);  // 0.95 → 0.75
+
+        polyline.unshift([pos.x, pos.y]);   // oldest first for polyline order
+        ghostData[gi].push({
+          value     : [pos.x, pos.y, ghostR],
+          itemStyle : { color: col, opacity: opacity, borderWidth: 0 }
+        });
+      }
+      polyline.push([cur.x, cur.y]);
+      lineData[gi][ent.id] = polyline;
+    }
+
+    var flatLineData = [];
+    for (var g = 0; g < nGroups; g++) {
+      var col  = groupColors[g] || "#aaa";
+      var segs = [];
+      var keys = Object.keys(lineData[g]);
+      for (var k = 0; k < keys.length; k++) {
+        var pts = lineData[g][keys[k]];
+        for (var p = 0; p < pts.length; p++) segs.push({ value: pts[p] });
+        segs.push({ value: [null, null] });
+      }
+      flatLineData.push({ segs: segs, color: col });
+    }
+
+    return {
+      bubbleData:   bubbleData,
+      flatLineData: flatLineData,
+      ghostData:    ghostData,
+      tDisplay:     tDisplay
+    };
+  }
+
+  // ── render one frame ───────────────────────────────────────────────────
+  function renderFrame(prog) {
+    var fd = buildSeriesData(prog);
+
+    var seriesUpdate = [];
+    for (var g = 0; g < nGroups; g++) {
+      seriesUpdate[trailLineIdx(g)] = {
+        data      : fd.flatLineData[g].segs,
+        lineStyle : { color: fd.flatLineData[g].color, width: 1.5, opacity: 0.5 }
+      };
+    }
+    for (var g = 0; g < nGroups; g++) {
+      // Per-point itemStyle in ghostData already carries color + opacity.
+      // Setting opacity:1 at series level ensures ECharts does not dim the
+      // whole series; individual point opacity then controls the fade effect.
+      seriesUpdate[trailGhostIdx(g)] = {
+        data      : fd.ghostData[g],
+        opacity   : 1
+      };
+    }
+    for (var g = 0; g < nGroups; g++) {
+      seriesUpdate[bubbleIdx(g)] = { data: fd.bubbleData[g] };
+    }
+
+    var pinnedName = highlightedName !== null ? highlightedName : hoverName;
+
+    chart.setOption({
+      title  : [{ subtext: timeName + ": " + Math.round(fd.tDisplay),
+                  subtextStyle: { fontSize: 15, color: "#000" } }],
+      series : seriesUpdate
+    }, false);
+
+    slider.value          = String(Math.round(prog * 10000));
+    timeLabel.textContent = String(Math.round(fd.tDisplay));
+
+    if (pinnedName !== null) {
+      var found = null;
+      for (var g = 0; g < nGroups; g++) {
+        var bdata = fd.bubbleData[g];
+        for (var di = 0; di < bdata.length; di++) {
+          if (bdata[di].name === pinnedName) {
+            found = { point: bdata[di], group: groups[g] };
+            break;
+          }
+        }
+        if (found) break;
+      }
+      if (found) {
+        var xVal = found.point.value[0];
+        var yVal = found.point.value[1];
+        pinnedTip.innerHTML =
+          "<b>" + found.group + "</b><br/>" +
+          found.point.name + "<br/>" +
+          x_label_js + ": " + xVal.toLocaleString(undefined, {maximumFractionDigits:1}) + "<br/>" +
+          y_label_js + ": " + yVal.toLocaleString(undefined, {maximumFractionDigits:1});
+
+        if (tooltipFollow) {
+          // Move tip with the bubble using convertToPixel
+          var gi = grpIdx[found.group];
+          var px = chart.convertToPixel({ seriesIndex: bubbleIdx(gi) },
+                                        [xVal, yVal]);
+          if (px) {
+            pinnedTip.style.left = (px[0] + 14) + "px";
+            pinnedTip.style.top  = (px[1] - 10) + "px";
+          }
+        } else {
+          // Fixed position: upper right inside chart area
+          pinnedTip.style.left = "auto";
+          pinnedTip.style.right = "170px";
+          pinnedTip.style.top   = "90px";
+        }
+        pinnedTip.style.display = "block";
+      }
+    } else {
+      pinnedTip.style.display = "none";
+    }
+  }
+
+  // ── clear trail series ─────────────────────────────────────────────────
+  function clearTrails() {
+    var seriesUpdate = [];
+    for (var g = 0; g < nGroups; g++) {
+      seriesUpdate[trailLineIdx(g)]  = { data: [] };
+      seriesUpdate[trailGhostIdx(g)] = { data: [] };
+    }
+    chart.setOption({ series: seriesUpdate }, false);
+  }
+
+  // ── apply new font size ────────────────────────────────────────────────
+  function applyLabelSize(sz) {
+    labelFontSize         = Math.max(6, Math.min(24, sz));
+    fsReadout.textContent = String(labelFontSize);
+    var col = labelColour ? "inherit" : "#555";
+    var seriesUpdate = [];
+    for (var g = 0; g < nGroups; g++) {
+      seriesUpdate[bubbleIdx(g)] = { label: { fontSize: labelFontSize, color: col } };
+    }
+    chart.setOption({ series: seriesUpdate }, false);
+  }
+
+  // ── animation state ────────────────────────────────────────────────────
+  var playing   = false;
+  var startWall = null;
+  var startProg = 0;
+  var rafId     = null;
+
+  function animStep(ts) {
+    if (!startWall) startWall = ts;
+    var elapsed = ts - startWall;
+    var prog    = startProg + elapsed / duration;
+    if (prog >= 1) {
+      renderFrame(1);
+      rafId = null;
+      setTimeout(function() {
+        if (playing) {
+          startProg = 0;
+          startWall = null;
+          rafId = requestAnimationFrame(animStep);
+        }
+      }, 2000);
+      return;
+    }
+    renderFrame(prog);
+    rafId = requestAnimationFrame(animStep);
+  }
+
+  function play() {
+    playing = true; startWall = null;
+    playBtn.innerHTML = "&#9646;&#9646;";
+    rafId = requestAnimationFrame(animStep);
+  }
+
+  function pause() {
+    playing = false;
+    if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+    startProg = parseFloat(slider.value) / 10000;
+    startWall = null;
+    playBtn.innerHTML = "&#9654;";
+  }
+
+  // ── events ─────────────────────────────────────────────────────────────
+  playBtn.addEventListener("click",    function() { playing ? pause() : play(); });
+  slider.addEventListener("mousedown", function() { if (playing) pause(); });
+  slider.addEventListener("input",     function() {
+    startProg = parseFloat(slider.value) / 10000;
+    renderFrame(startProg);
+  });
+  btnSmaller.addEventListener("click", function() { applyLabelSize(labelFontSize - 1); });
+  btnLarger.addEventListener("click",  function() { applyLabelSize(labelFontSize + 1); });
+  trailsBtn.addEventListener("click",  function() {
+    showTrails = !showTrails;
+    updateTrailsBtn();
+    if (!showTrails) clearTrails();
+    else renderFrame(parseFloat(slider.value) / 10000);
+  });
+
+  // Legend toggle — update legendSelected and re-render
+  chart.on("legendselectchanged", function(params) {
+    legendSelected = params.selected;
+    renderFrame(parseFloat(slider.value) / 10000);
+  });
+
+  // Click on a bubble — show trails only for that entity; click again to clear.
+  // Guard against clicks on trail series (their names start with ".trail_").
+  chart.on("click", function(params) {
+    if (params.componentType !== "series") return;
+    if (params.seriesName && params.seriesName.indexOf(".trail_") === 0) return;
+    if (highlightedName === params.name) {
+      highlightedName = null;
+    } else {
+      highlightedName = params.name;
+    }
+    renderFrame(parseFloat(slider.value) / 10000);
+  });
+
+  // Click on empty chart area — restore all trails
+  chart.getZr().on("click", function(e) {
+    if (!e.target) {
+      highlightedName = null;
+      renderFrame(parseFloat(slider.value) / 10000);
+    }
+  });
+
+  // Hover over a bubble — hide trails of all other entities while hovered.
+  // mouseover/mouseout are more reliable than highlight/downplay for getting
+  // the hovered entity name across all echarts4r/ECharts version combinations.
+  chart.on("mouseover", function(params) {
+    if (params.componentType !== "series") return;
+    if (params.seriesName && params.seriesName.indexOf(".trail_") === 0) return;
+    hoverName  = params.name;
+    hoverGroup = entityGroupMap[params.name] || null;
+    renderFrame(parseFloat(slider.value) / 10000);
+  });
+
+  chart.on("mouseout", function(params) {
+    if (params.componentType !== "series") return;
+    // Only clear hover if no click is locked — otherwise keep pinnedTip showing
+    if (highlightedName === null) {
+      hoverName  = null;
+      hoverGroup = null;
+      pinnedTip.style.display = "none";
+    }
+    renderFrame(parseFloat(slider.value) / 10000);
+  });
+
+  // ── initial render ─────────────────────────────────────────────────────
+  renderFrame(0);
+}
+'
+
+  # Inject R values by simple string replacement — no sprintf % parsing risk
+  anim_js <- js_template
+  anim_js <- gsub("__ENTITIES__",     jsonlite::toJSON(entity_list,  auto_unbox = TRUE, digits = 6), anim_js, fixed = TRUE)
+  anim_js <- gsub("__TIMESTEPS__",    jsonlite::toJSON(time_steps,   auto_unbox = TRUE),             anim_js, fixed = TRUE)
+  anim_js <- gsub("__GROUPS__",       jsonlite::toJSON(groups,       auto_unbox = FALSE),            anim_js, fixed = TRUE)
+  anim_js <- gsub("__GROUPCOLORS__",  jsonlite::toJSON(unname(group_colors), auto_unbox = FALSE),    anim_js, fixed = TRUE)
+  anim_js <- gsub("__DURATION__",     as.character(as.integer(duration)),                            anim_js, fixed = TRUE)
+  anim_js <- gsub("__TIMENAME__",     time_label,                                                    anim_js, fixed = TRUE)
+  anim_js <- gsub("__LABELSIZE__",    as.character(init_label_size),                                 anim_js, fixed = TRUE)
+  anim_js <- gsub("__LABELCOLOUR__",  tolower(as.character(isTRUE(label_colour))),                   anim_js, fixed = TRUE)
+  anim_js <- gsub("__XLABEL__",       x_label,                                                       anim_js, fixed = TRUE)
+  anim_js <- gsub("__YLABEL__",       y_label,                                                       anim_js, fixed = TRUE)
+  anim_js <- gsub("__TRAILS__",       tolower(as.character(isTRUE(trails))),                         anim_js, fixed = TRUE)
+  anim_js <- gsub("__TRAILLENGTH__",  as.character(as.integer(trail_length)),                        anim_js, fixed = TRUE)
+  anim_js <- gsub("__HOVERFOCUS__",   paste0('"', hover_focus, '"'),                                 anim_js, fixed = TRUE)
+  anim_js <- gsub("__TOOLTIPFOLLOW__", tolower(as.character(isTRUE(tooltip_follow))),                anim_js, fixed = TRUE)
+
+
+  widget <- htmlwidgets::onRender(widget, anim_js)
+  widget
+}
+
+
+# ── demo helper ───────────────────────────────────────────────────────────────
+
+#' Load the classic Gapminder dataset (auto-installs if needed)
+#' @return tibble: country, continent, year, lifeExp, pop, gdpPercap
+load_gapminder <- function() {
+  if (!requireNamespace("gapminder", quietly = TRUE)) {
+    message("Installing gapminder package...")
+    install.packages("gapminder", repos = "https://cloud.r-project.org")
+  }
+  gapminder::gapminder
+}
+
+
+# ── quick demo (uncomment to run) ─────────────────────────────────────────────
+
+# gap <- load_gapminder()
+#
+# motionChart(gap,
+#             id           = "country",
+#             time         = "year",
+#             x            = "gdpPercap",
+#             y            = "lifeExp",
+#             size         = "pop",
+#             color        = "continent",
+#             x_log        = TRUE,
+#             duration     = 17000,
+#             trails       = TRUE,
+#             trail_length = 4,
+#             hover_focus  = "group",   # "group" or "entity"
+#             label_colour = TRUE,
+#             title        = "Gapminder — Health & Wealth of Nations")
