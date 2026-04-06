@@ -216,7 +216,17 @@ motionChart <- function(data,
   x_bounds <- axis_bounds(df[[x]], log = x_log)
   y_bounds <- axis_bounds(df[[y]], log = y_log)
 
-  # ── 5. auto label size ────────────────────────────────────────────────────
+  # ── smart decimal places for tooltip ─────────────────────────────────────
+  # Use log10 of the data range to determine how many decimal places are needed
+  # to show meaningful variation.  Mirrors the R idiom:
+  #   format(x, digits = max(abs(log10(x))), nsmall = max(abs(log10(x))))
+  smart_decimals <- function(vals) {
+    vals <- vals[is.finite(vals) & vals > 0]
+    if (length(vals) == 0) return(1L)
+    as.integer(max(0, ceiling(max(abs(log10(vals))))))
+  }
+  x_decimals <- smart_decimals(df[[x]])
+  y_decimals <- smart_decimals(df[[y]])
   n_entities <- length(unique(df[[id]]))
   init_label_size <- if (!is.null(label_size)) as.integer(label_size)
                      else auto_label_size(n_entities)
@@ -393,6 +403,8 @@ function(el, x) {
   var tooltipFollow = __TOOLTIPFOLLOW__; // true = tip moves with bubble, false = upper right
   var x_label_js    = "__XLABEL__";
   var y_label_js    = "__YLABEL__";
+  var x_decimals    = __XDECIMALS__;
+  var y_decimals    = __YDECIMALS__;
 
   // ── pinned tooltip div ────────────────────────────────────────────────
   // A custom div that tracks the active bubble — avoids ECharts showTip
@@ -717,21 +729,23 @@ function(el, x) {
         pinnedTip.innerHTML =
           "<b>" + found.group + "</b><br/>" +
           found.point.name + "<br/>" +
-          x_label_js + ": " + xVal.toLocaleString(undefined, {maximumFractionDigits:1}) + "<br/>" +
-          y_label_js + ": " + yVal.toLocaleString(undefined, {maximumFractionDigits:1});
+          x_label_js + ": " + xVal.toLocaleString(undefined, {minimumFractionDigits: x_decimals, maximumFractionDigits: x_decimals}) + "<br/>" +
+          y_label_js + ": " + yVal.toLocaleString(undefined, {minimumFractionDigits: y_decimals, maximumFractionDigits: y_decimals});
 
         if (tooltipFollow) {
-          // Move tip with the bubble using convertToPixel
           var gi = grpIdx[found.group];
           var px = chart.convertToPixel({ seriesIndex: bubbleIdx(gi) },
                                         [xVal, yVal]);
           if (px) {
-            pinnedTip.style.left = (px[0] + 14) + "px";
-            pinnedTip.style.top  = (px[1] - 10) + "px";
+            // Place tip to the LEFT of the bubble so cursor does not cover it.
+            // offsetWidth gives current rendered width; fall back to 160px.
+            var tipW = pinnedTip.offsetWidth || 160;
+            pinnedTip.style.left  = (px[0] - tipW - 10) + "px";
+            pinnedTip.style.right = "auto";
+            pinnedTip.style.top   = (px[1] - 10) + "px";
           }
         } else {
-          // Fixed position: upper right inside chart area
-          pinnedTip.style.left = "auto";
+          pinnedTip.style.left  = "auto";
           pinnedTip.style.right = "170px";
           pinnedTip.style.top   = "90px";
         }
@@ -886,6 +900,8 @@ function(el, x) {
   anim_js <- gsub("__LABELCOLOUR__",  tolower(as.character(isTRUE(label_colour))),                   anim_js, fixed = TRUE)
   anim_js <- gsub("__XLABEL__",       x_label,                                                       anim_js, fixed = TRUE)
   anim_js <- gsub("__YLABEL__",       y_label,                                                       anim_js, fixed = TRUE)
+  anim_js <- gsub("__XDECIMALS__",    as.character(x_decimals),                                      anim_js, fixed = TRUE)
+  anim_js <- gsub("__YDECIMALS__",    as.character(y_decimals),                                      anim_js, fixed = TRUE)
   anim_js <- gsub("__TRAILS__",       tolower(as.character(isTRUE(trails))),                         anim_js, fixed = TRUE)
   anim_js <- gsub("__TRAILLENGTH__",  as.character(as.integer(trail_length)),                        anim_js, fixed = TRUE)
   anim_js <- gsub("__HOVERFOCUS__",   paste0('"', hover_focus, '"'),                                 anim_js, fixed = TRUE)
