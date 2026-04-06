@@ -1,11 +1,34 @@
 Package: MotionChart
 Type: Package
-Title: Motion Chart using echarts4r (no Flash)
-Version: 0.8
+Title: Flash-Free Animated Motion Charts via ECharts
+Version: 0.9.0
 Date: 2026-04-05
 Author: John R. Wallace <soundbirds@comcast.net>
 Maintainer: John R. Wallace <soundbirds@comcast.net>
-Depends: echarts4r (>= 0.4.0), dplyr, htmlwidgets, jsonlite
-Description: A flash-free replacement for googleVis::gvisMotionChart using echarts4r.
+Description: A flash-free replacement for googleVis::gvisMotionChart using
+    echarts4r. Renders smooth, interactive animated bubble charts driven by a
+    JavaScript requestAnimationFrame loop with client-side interpolation between
+    real data time steps. Features include fading trail lines and ghost bubbles,
+    interactive play/pause/scrub controls, hover and click entity highlighting,
+    legend-based group filtering, live label size adjustment, and a pinned
+    tooltip. All animation logic runs in the browser; data remains local.
+    Calls originate from R and output is an htmlwidget suitable for use in
+    RStudio, Shiny, R Markdown, and Quarto.
 License: MIT
+URL: https://github.com/John-R-Wallace-NOAA/GoogleVis_Type_Motion_Chart_No_Flash
+BugReports: https://github.com/John-R-Wallace-NOAA/GoogleVis_Type_Motion_Chart_No_Flash/issues
+Depends: R (>= 4.0.0)
+Imports:
+    echarts4r (>= 0.4.0),
+    dplyr,
+    htmlwidgets,
+    jsonlite,
+    htmltools
+Suggests:
+    gapminder,
+    stringr,
+    remotes
+Encoding: UTF-8
+LazyData: true
 LazyLoad: yes
+RoxygenNote: 7.0.0
