@@ -1,6 +1,11 @@
 # GoogleVis_Type_Motion_Chart_No_Flash
 GoogleVis type motion chart that doesn't need Flash to work.
 
+Install: 
+             
+     # Get the remotes package, if it is not already installed.
+     if (!any(installed.packages()[, 1] %in% "remotes"))  install.packages('remotes')  
+     remotes::install_github("John-R-Wallace-NOAA/GoogleVis_Type_Motion_Chart_No_Flash")
 
 Usage:
 
