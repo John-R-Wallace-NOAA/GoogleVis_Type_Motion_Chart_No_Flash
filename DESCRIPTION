@@ -1,0 +1,11 @@
+Package: MotionChart
+Type: Package
+Title: Motion Chart using echarts4r (no Flash)
+Version: 0.8
+Date: 2026-04-05
+Author: John R. Wallace <soundbirds@comcast.net>
+Maintainer: John R. Wallace <soundbirds@comcast.net>
+Depends: echarts4r (>= 0.4.0), dplyr, htmlwidgets, jsonlite
+Description: A flash-free replacement for googleVis::gvisMotionChart using echarts4r.
+License: MIT
+LazyLoad: yes
