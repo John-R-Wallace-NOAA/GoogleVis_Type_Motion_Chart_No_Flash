@@ -1,7 +1,7 @@
 Package: MotionChart
 Type: Package
 Title: Flash-Free Animated Motion Charts via ECharts
-Version: 0.9.0
+Version: 1.0.0
 Date: 2026-04-05
 Author: John R. Wallace <soundbirds@comcast.net>
 Maintainer: John R. Wallace <soundbirds@comcast.net>
@@ -31,4 +31,4 @@ Suggests:
 Encoding: UTF-8
 LazyData: true
 LazyLoad: yes
-RoxygenNote: 7.0.0
+RoxygenNote: 7.3.3
