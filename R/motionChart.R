@@ -5,143 +5,110 @@
 # A JavaScript requestAnimationFrame loop interpolates between real time steps
 # client-side and calls echartsInstance.setOption() to update point positions.
 #
-# Author:  <you>
+# Author:  John R. Wallace
 # License: MIT
 # Depends: echarts4r (>= 0.4.0), dplyr, htmlwidgets, jsonlite
 
-# ── dependencies ─────────────────────────────────────────────────────────────
-for (pkg in c("echarts4r", "dplyr", "htmlwidgets", "jsonlite", "htmltools")) {
-  if (!requireNamespace(pkg, quietly = TRUE))
-    stop(sprintf("Install %s:  install.packages('%s')", pkg, pkg))
-}
-
-library(echarts4r)
-library(dplyr)
-
-
-# ── axis range helper ─────────────────────────────────────────────────────────
-
-#' Compute stable, nicely-rounded axis bounds across all time steps
-#'
-#' For log axes, bounds are rounded to the nearest "nice" power-of-10 step
-#' (floor for min, ceiling for max) so tick labels are clean integers.
-#' For linear axes, bounds are floored/ceilinged to a round number whose
-#' magnitude matches the data range.
-#'
-#' @param vals   Numeric vector of all values for one axis across every time step.
-#' @param log    Logical — is this a log-scale axis?
-#' @param pad    Extra padding: log-space decades (log) or range fraction (linear).
-#' @return Named list with \code{min} and \code{max}.
-axis_bounds <- function(vals, log = FALSE, pad = 0.05) {
-  if (log) {
-    vals <- vals[is.finite(vals) & vals > 0]
-  } else {
-    vals <- vals[is.finite(vals)]
-  }
-  lo <- min(vals, na.rm = TRUE)
-  hi <- max(vals, na.rm = TRUE)
-
-  if (log) {
-    # Round outward to whole decades (integer log10) so bounds always land on
-    # clean powers of 10: 100, 1000, 10000 etc.  Half-decade steps like 3162
-    # are valid mathematically but ECharts can't place a clean tick label there.
-    log_lo  <- log10(lo) - pad
-    log_hi  <- log10(hi) + pad
-    nice_lo <- floor(log_lo)      # whole decade floor
-    nice_hi <- ceiling(log_hi)    # whole decade ceiling
-    list(min = 10^nice_lo, max = 10^nice_hi)
-  } else {
-    rng       <- hi - lo
-    padded_lo <- lo - pad * rng
-    padded_hi <- hi + pad * rng
-    magnitude <- 10^floor(log10(max(abs(rng), 1e-9)))
-    step      <- magnitude / 2
-    nice_lo   <- floor(padded_lo   / step) * step
-    nice_hi   <- ceiling(padded_hi / step) * step
-    list(min = nice_lo, max = nice_hi)
-  }
-}
-
-
-# ── auto label-size helper ────────────────────────────────────────────────────
-
-#' Choose a default label font size based on entity count
-#'
-#' Fewer entities → larger labels; crowded charts → smaller labels.
-#' The user can always override interactively with the A- / A+ buttons.
-#'
-#' @param n Integer number of entities.
-#' @return Integer font size in pixels.
-auto_label_size <- function(n) {
-  if      (n <=  10) 19L
-  else if (n <=  20) 18L
-  else if (n <=  40) 17L
-  else if (n <=  80) 16L
-  else if (n <= 140) 15L
-  else               14L
-}
-
-
 # ── main function ─────────────────────────────────────────────────────────────
 
-#' Motion Chart (flash-free gvisMotionChart replacement)
+#' Motion Chart - Flash-Free Animated Bubble Chart
 #'
-#' Renders an animated, interactive bubble chart via ECharts / echarts4r.
-#' Axis limits are fixed to global data bounds so they never jump during
-#' animation.  Entity label size is auto-selected from entity count and can
-#' be adjusted interactively with A- / A+ buttons in the control bar.
+#' A drop-in replacement for \code{googleVis::gvisMotionChart} built on
+#' \code{echarts4r} and Apache ECharts.  Renders smooth, interactive animated
+#' bubble charts driven by a JavaScript \code{requestAnimationFrame} loop with
+#' client-side interpolation between real data time steps.  No Flash, no browser
+#' plugin, no data uploaded anywhere.
 #'
-#' @param data       Data frame in long format (one row per entity per time step).
-#' @param id         Column name for the entity identifier (e.g. "country").
-#' @param time       Column name for the time variable (must be numeric).
-#' @param x          Column name for the x-axis variable.
-#' @param y          Column name for the y-axis variable.
-#' @param size       Column name for bubble size.  NULL = uniform size.
-#' @param color      Column name for categorical colour grouping.  NULL = single colour.
-#' @param x_log      Use log scale on x-axis?  Default TRUE.
-#' @param y_log      Use log scale on y-axis?  Default FALSE.
-#' @param x_label    X-axis label.  Defaults to column name.
-#' @param y_label    Y-axis label.  Defaults to column name.
-#' @param size_scale   Length-2 numeric: min/max bubble radius in pixels. Default c(10, 60).
-#'                     The minimum of 10 keeps the smallest bubbles visible and clickable.
-#' @param duration     Total playback duration in ms for one full pass. Default 10000.
-#' @param label_size   Integer font size (px) for entity labels.  NULL = auto-select
-#'                     based on entity count (recommended).  Can be nudged at runtime
-#'                     with the A- / A+ buttons in the control bar.
-#' @param label_colour Logical.  If TRUE (default), each entity label is coloured to
-#'                     match its bubble (inherits the ECharts series colour).  If FALSE,
-#'                     all labels render in neutral dark grey ("#555").
-#' @param title        Optional chart title string.
-#' @param theme      echarts4r theme name.  Default "default".
-#' @param width      Widget width  (CSS).  Default "100\%".
-#' @param height     Widget height (CSS).  Default "600px".
+#' @param data          Data frame in long format (one row per entity per time step).
+#' @param id            Column name (string) for the entity identifier (e.g. \code{"country"}).
+#' @param time          Column name (string) for the time variable.  Must be numeric.
+#' @param x             Column name (string) for the x-axis variable.
+#' @param y             Column name (string) for the y-axis variable.
+#' @param size          Column name (string) for bubble size.  \code{NULL} = uniform size.
+#' @param color         Column name (string) for categorical colour grouping.
+#'                      \code{NULL} = single colour.
+#' @param x_log         Logical.  Use log scale on x-axis?  Default \code{TRUE}.
+#' @param y_log         Logical.  Use log scale on y-axis?  Default \code{FALSE}.
+#' @param x_label       X-axis label string.  \code{NULL} = auto title-case of column name.
+#' @param y_label       Y-axis label string.  \code{NULL} = auto title-case of column name.
+#' @param size_scale    Length-2 numeric vector: min and max bubble radius in pixels.
+#'                      Default \code{c(10, 60)}.
+#' @param duration      Total playback duration in milliseconds for one full pass through
+#'                      all time steps.  Default \code{17000}.
+#' @param label_size    Integer font size in pixels for entity labels.  \code{NULL} =
+#'                      auto-selected based on entity count.  Can be adjusted at runtime
+#'                      with the A- / A+ buttons in the control bar.
+#' @param label_colour  Logical.  If \code{TRUE} (default), entity labels are coloured to
+#'                      match their bubble.  If \code{FALSE}, all labels render in dark grey.
+#' @param trails        Logical.  Show fading trail lines and ghost bubbles behind each
+#'                      entity?  Default \code{TRUE}.
+#' @param trail_length  Integer.  Number of real time steps to trail back.  Default \code{4}.
+#' @param hover_focus   Character.  Controls what is highlighted when hovering over a bubble.
+#'                      \code{"group"} (default) highlights all entities in the same group.
+#'                      \code{"entity"} highlights only the hovered entity.
+#'                      Use the indexed form \code{c("group", "entity")[1]} to make the
+#'                      options self-documenting - change the index to switch.
+#' @param tooltip_follow Logical.  If \code{FALSE} (default), the info box is pinned to the
+#'                      upper-right of the chart area.  If \code{TRUE}, the info box moves
+#'                      smoothly with the selected bubble.
+#' @param title         Optional chart title string.
+#' @param theme         echarts4r theme name.  One of \code{"default"}, \code{"dark"},
+#'                      \code{"vintage"}, \code{"westeros"}, \code{"essos"},
+#'                      \code{"wonderland"}, \code{"walden"}, \code{"chalk"},
+#'                      \code{"infographic"}, \code{"macarons"}, \code{"roma"},
+#'                      \code{"shine"}, \code{"purple-passion"}, \code{"halloween"}.
+#'                      Default \code{"default"}.
+#' @param width         Widget width as a CSS string.  Default \code{"100\%"}.
+#' @param height        Widget height as a CSS string.  Default \code{"600px"}.
 #'
-#' @return An echarts4r / htmlwidget object.
+#' @return An \code{echarts4r} / \code{htmlwidget} object suitable for display in the
+#'   RStudio Viewer, Shiny apps, R Markdown documents, and Quarto documents.
 #'
 #' @details
-#' **Fixed axes:** global min/max are computed in R across every time step and
-#' passed to ECharts as explicit \code{min}/\code{max} axis properties.
-#' ECharts' auto-scaling is therefore disabled and the axes never move during
-#' playback.
+#' \strong{Animation:} all interpolation between real data time steps is performed
+#' client-side in JavaScript via a \code{requestAnimationFrame} loop.  Data is
+#' serialised to compact JSON once and embedded in the widget; no data is sent to
+#' any server.
 #'
-#' **Label sizing:** the default font size is chosen by \code{auto_label_size()}
-#' which scales down as entity count grows.  The A- / A+ buttons in the control
-#' bar each step the size by 1 px and immediately re-render — useful for
-#' adjusting before a presentation without touching R code.
+#' \strong{Fixed axes:} global min/max are computed in R across every time step and
+#' passed to ECharts as explicit axis bounds, so axes never rescale during playback.
+#'
+#' \strong{Trails:} when \code{trails = TRUE}, each entity's recent path is shown as
+#' a fading polyline plus ghost bubbles (bright and full-size nearest the current
+#' position, fading and shrinking toward the tail).  Trails respect legend filtering
+#' and hover/click selection.
+#'
+#' \strong{Interaction:}
+#' \itemize{
+#'   \item Hover a bubble to highlight its group (or entity if \code{hover_focus = "entity"}).
+#'   \item Click a bubble to lock the highlight; click again or click empty space to release.
+#'   \item Click legend items to toggle groups on/off.
+#'   \item Use A- / A+ buttons to adjust label size without re-running R.
+#'   \item Use the Trails ON/OFF button to toggle trail display.
+#' }
 #'
 #' @examples
 #' \dontrun{
-#' library(gapminder)
-#' motionChart(gapminder,
-#'             id       = "country",
-#'             time     = "year",
-#'             x        = "gdpPercap",
-#'             y        = "lifeExp",
-#'             size     = "pop",
-#'             color    = "continent",
-#'             duration = 12000,
-#'             title    = "Gapminder — Health & Wealth of Nations")
+#' gap <- load_gapminder()
+#'
+#' motionChart(gap,
+#'             id             = "country",
+#'             time           = "year",
+#'             x              = "gdpPercap",
+#'             y              = "lifeExp",
+#'             size           = "pop",
+#'             color          = "continent",
+#'             x_log          = TRUE,
+#'             duration       = 17000,
+#'             trails         = TRUE,
+#'             trail_length   = 4,
+#'             hover_focus    = c("group", "entity")[1],
+#'             tooltip_follow = FALSE,
+#'             label_colour   = TRUE,
+#'             title          = "Gapminder - Health & Wealth of Nations")
 #' }
+#'
+#' @export
 motionChart <- function(data,
                         id,
                         time,
@@ -165,6 +132,80 @@ motionChart <- function(data,
                         theme      = "default",
                         width      = "100%",
                         height     = "600px") {
+                        
+    
+  # ── dependencies ─────────────────────────────────────────────────────────────
+  for (pkg in c("echarts4r", "dplyr", "htmlwidgets", "jsonlite", "htmltools")) {
+    if (!requireNamespace(pkg, quietly = TRUE))
+      stop(sprintf("Install %s:  install.packages('%s')", pkg, pkg))
+  }
+  
+  require(echarts4r)
+  require(dplyr)
+  
+  
+  # ── axis range helper ─────────────────────────────────────────────────────────
+  
+  # Compute stable, nicely-rounded axis bounds across all time steps
+  #
+  # For log axes, bounds are rounded to the nearest "nice" power-of-10 step
+  # (floor for min, ceiling for max) so tick labels are clean integers.
+  # For linear axes, bounds are floored/ceilinged to a round number whose
+  # magnitude matches the data range.
+  #
+  # @param vals   Numeric vector of all values for one axis across every time step.
+  # @param log    Logical. Is this a log-scale axis?
+  # @param pad    Extra padding: log-space decades (log) or range fraction (linear).
+  # @return Named list with \code{min} and \code{max}.
+  axis_bounds <- function(vals, log = FALSE, pad = 0.05) {
+    if (log) {
+      vals <- vals[is.finite(vals) & vals > 0]
+    } else {
+      vals <- vals[is.finite(vals)]
+    }
+    lo <- min(vals, na.rm = TRUE)
+    hi <- max(vals, na.rm = TRUE)
+  
+    if (log) {
+      # Round outward to whole decades (integer log10) so bounds always land on
+      # clean powers of 10: 100, 1000, 10000 etc.  Half-decade steps like 3162
+      # are valid mathematically but ECharts can't place a clean tick label there.
+      log_lo  <- log10(lo) - pad
+      log_hi  <- log10(hi) + pad
+      nice_lo <- floor(log_lo)      # whole decade floor
+      nice_hi <- ceiling(log_hi)    # whole decade ceiling
+      list(min = 10^nice_lo, max = 10^nice_hi)
+    } else {
+      rng       <- hi - lo
+      padded_lo <- lo - pad * rng
+      padded_hi <- hi + pad * rng
+      magnitude <- 10^floor(log10(max(abs(rng), 1e-9)))
+      step      <- magnitude / 2
+      nice_lo   <- floor(padded_lo   / step) * step
+      nice_hi   <- ceiling(padded_hi / step) * step
+      list(min = nice_lo, max = nice_hi)
+    }
+  }
+  
+  
+  # ── auto label-size helper ────────────────────────────────────────────────────
+  
+  # Choose a default label font size based on entity count
+  #
+  # Fewer entities give larger labels; crowded charts give smaller labels.
+  # The user can always override interactively with the A- / A+ buttons.
+  #
+  # @param n Integer number of entities.
+  # @return Integer font size in pixels.
+  auto_label_size <- function(n) {
+    if      (n <=  10) 19L
+    else if (n <=  20) 18L
+    else if (n <=  40) 17L
+    else if (n <=  80) 16L
+    else if (n <= 140) 15L
+    else               14L
+  }
+                      
 
   # ── 0. validate ────────────────────────────────────────────────────────────
   stopifnot(is.data.frame(data))
@@ -916,7 +957,8 @@ function(el, x) {
 # ── demo helper ───────────────────────────────────────────────────────────────
 
 #' Load the classic Gapminder dataset (auto-installs if needed)
-#' @return tibble: country, continent, year, lifeExp, pop, gdpPercap
+#' @return A tibble with columns: country, continent, year, lifeExp, pop, gdpPercap
+#' @export
 load_gapminder <- function() {
   if (!requireNamespace("gapminder", quietly = TRUE)) {
     message("Installing gapminder package...")
