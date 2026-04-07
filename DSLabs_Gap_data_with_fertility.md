@@ -57,5 +57,6 @@ Life expectancy by fertility
             
             
 More Gapminder data: https://www.gapminder.org/data/            
-            
-            
+
+A Gapminder bubble chart is here: https://observablehq.com/@gapminder/bubblechart-tutorial-solved
+
