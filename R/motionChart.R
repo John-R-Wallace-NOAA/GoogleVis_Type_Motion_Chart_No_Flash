@@ -498,11 +498,18 @@ function(el, x) {
     "font-family:sans-serif"
   ].join(";");
 
-  // play/pause
+  // play/pause — pause uses inline SVG for slim proportions since the Unicode
+  // pause character is too wide/squatty on most system fonts.
+  var PLAY_HTML  = "&#9654;";
+  var PAUSE_HTML = \'<svg width="14" height="18" viewBox="0 0 14 18" style="vertical-align:middle">\' +
+                   \'<rect x="1" y="1" width="4" height="16" rx="1" fill="currentColor"/>\' +
+                   \'<rect x="9" y="1" width="4" height="16" rx="1" fill="currentColor"/>\' +
+                   \'</svg>\';
+
   var playBtn = document.createElement("button");
-  playBtn.innerHTML = "&#9654;";
+  playBtn.innerHTML = PLAY_HTML;
   playBtn.title     = "Play / Pause";
-  playBtn.style.cssText = "font-size:18px;border:none;background:none;cursor:pointer;padding:0 4px;flex-shrink:0;";
+  playBtn.style.cssText = "font-size:18px;border:none;background:none;cursor:pointer;padding:0 4px;flex-shrink:0;line-height:1;";
 
   // scrubber
   var slider = document.createElement("input");
@@ -857,7 +864,7 @@ function(el, x) {
 
   function play() {
     playing = true; startWall = null;
-    playBtn.innerHTML = "&#9646;&#9646;";
+    playBtn.innerHTML = PAUSE_HTML;
     rafId = requestAnimationFrame(animStep);
   }
 
@@ -866,7 +873,7 @@ function(el, x) {
     if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
     startProg = parseFloat(slider.value) / 10000;
     startWall = null;
-    playBtn.innerHTML = "&#9654;";
+    playBtn.innerHTML = PLAY_HTML;
   }
 
   // ── events ─────────────────────────────────────────────────────────────
