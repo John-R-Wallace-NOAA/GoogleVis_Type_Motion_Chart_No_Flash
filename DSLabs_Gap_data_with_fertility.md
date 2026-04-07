@@ -10,7 +10,8 @@
      5           Argentina 1960            59.87           65.39      3.11   20619075 108322326649  Americas   South America 108322.33
      6             Armenia 1960               NA           66.86      4.55    1867396           NA      Asia    Western Asia        NA
 
-
+<br>
+<br>
 Life expectancy by gross domestic product per capita (billions) 
 
 
@@ -32,7 +33,8 @@ Life expectancy by gross domestic product per capita (billions)
                y_label      = "Life Expectancy",
                title        = "Gapminder — Health & Wealth of Nations")          
                
-
+<br>
+<br>
 Life expectancy by fertility 
 
 
@@ -54,7 +56,8 @@ Life expectancy by fertility
                y_label      = "Life Expectancy",
                title        = "Gapminder — Health & Wealth of Nations")          
                        
-            
+<br>
+<br>         
             
 More Gapminder data: https://www.gapminder.org/data/            
 
