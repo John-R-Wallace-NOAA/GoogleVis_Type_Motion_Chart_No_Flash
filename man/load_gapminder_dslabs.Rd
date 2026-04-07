@@ -10,5 +10,5 @@ load_gapminder_dslabs()
 A data frame with columns: country, year, infant_mortality, life_expectancy, fertility, population, gdp, continent, region, gdp_bil
 }
 \description{
-Load the dslabs Gapminder dataset
+Load the dslabs Gapminder dataset. 'gdp_bil' is 'gdp' in billions.
 }
