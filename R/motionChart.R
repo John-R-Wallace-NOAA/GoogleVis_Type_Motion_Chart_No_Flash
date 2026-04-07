@@ -258,13 +258,23 @@ motionChart <- function(data,
   y_bounds <- axis_bounds(df[[y]], log = y_log)
 
   # ── smart decimal places for tooltip ─────────────────────────────────────
-  # Use log10 of the data range to determine how many decimal places are needed
-  # to show meaningful variation.  Mirrors the R idiom:
-  #   format(x, digits = max(abs(log10(x))), nsmall = max(abs(log10(x))))
+  # Decimal places are needed only when values are small (< 1).
+  # For values >= 1, integers or 1 decimal is sufficient.
+  # Logic: find the smallest non-zero positive value; if it is < 1 then
+  # use enough decimals to show it, driven by its log10 magnitude.
+  # Examples:
+  #   gdpPercap  (min ~241,   max ~113k) -> 0 decimals
+  #   lifeExp    (min ~23,    max ~83)   -> 0 decimals
+  #   fertility  (min ~1.2,   max ~8)    -> 1 decimal
+  #   proportion (min ~0.03,  max ~0.9)  -> 2 decimals
+  #   tiny vals  (min ~0.000005)         -> 6 decimals
   smart_decimals <- function(vals) {
     vals <- vals[is.finite(vals) & vals > 0]
     if (length(vals) == 0) return(1L)
-    as.integer(max(0, ceiling(max(abs(log10(vals))))))
+    min_val <- min(vals)
+    if (min_val >= 10)  return(0L)
+    if (min_val >= 1)   return(1L)
+    as.integer(ceiling(abs(log10(min_val))))
   }
   x_decimals <- smart_decimals(df[[x]])
   y_decimals <- smart_decimals(df[[y]])
