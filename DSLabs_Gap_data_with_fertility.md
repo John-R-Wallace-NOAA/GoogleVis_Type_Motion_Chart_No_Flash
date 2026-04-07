@@ -23,7 +23,7 @@ Life expectancy by gross domestic product per capita (billions)
                size         = "population",
                color        = "continent",
                x_log        = TRUE,
-               duration     = 17000,
+               duration     = 17000,  # Larger values move the bubbles slower
                trails       = TRUE,
                trail_length = 4,
               hover_focus   = c("group", "entity")[1],
@@ -46,7 +46,7 @@ Life expectancy by fertility
                size         = "population",
                color        = "continent",
                x_log        = FALSE,
-               duration     = 20000,
+               duration     = 20000,  # Larger values move the bubbles slower
                trails       = TRUE,
                trail_length = 4,
               hover_focus   = c("group", "entity")[1],
@@ -57,8 +57,27 @@ Life expectancy by fertility
                title        = "Gapminder — Health & Wealth of Nations")          
                        
 <br>
-<br>         
+<br>     
+
+Fertility rate vs. infant mortality, sized by population
+
+
+     motionChart(gap_dslabs,          # dslabs::gapminder, not the gapminder package
+                 id       = "country",
+                 time     = "year",
+                 x        = "fertility",
+                 y        = "infant_mortality",
+                 size     = "population",
+                 color    = "continent",
+                 x_log    = FALSE,
+               duration   = 30000,  # Larger values move the bubbles slower
+           tooltip_follow = FALSE,
+                 title    = "Fertility & Infant Mortality - After Hans Rosling")    
             
+
+<br>
+<br>        
+
 More Gapminder data: https://www.gapminder.org/data/            
 
 A Gapminder bubble chart is here: https://observablehq.com/@gapminder/bubblechart-tutorial-solved
