@@ -5,16 +5,10 @@
 \title{Load the classic Gapminder dataset (auto-installs if needed)}
 \usage{
 load_gapminder()
-
-load_gapminder()
 }
 \value{
 A data frame with columns: country, continent, year, lifeExp, pop, gdpPercap
-
-A tibble with columns: country, continent, year, lifeExp, pop, gdpPercap
 }
 \description{
-Load the classic Gapminder dataset (auto-installs if needed)
-
 Load the classic Gapminder dataset (auto-installs if needed)
 }
