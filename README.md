@@ -3,7 +3,14 @@
 A drop-in spiritual successor to `googleVis::gvisMotionChart` built on
 [echarts4r](https://echarts4r.john-coene.com/) and Apache ECharts.  No Flash,
 no browser plugin, no data uploaded anywhere.  All animation runs client-side
-in the browser via a `requestAnimationFrame` loop; data stays local.
+in the browser via a `requestAnimationFrame` loop; data stays local. 
+<br>
+<br>
+Created by brainstorming sessions (8+ hours) with ChatGPT, 
+and having a failed start before deciding the best path forward was to use echarts4r. The heavy lift coding was done by Claude, but I did have
+some good coding inputs. However, I mostly contributed design ideas and what features to add. A strange new world, you direct the process, 
+but sometimes you are just the monkey running code for AI and telling it what you see. If you need something customized, 
+one approach is to just fork the repo and tell Claude or another AI what you need.
 
 ---
 
