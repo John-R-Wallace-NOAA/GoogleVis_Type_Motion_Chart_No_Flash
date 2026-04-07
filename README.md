@@ -16,7 +16,7 @@ one approach is to just fork the repo and tell Claude or another AI what you nee
 
 ## Background
 
-Hans Rosling's animated bubble charts — popularised by Gapminder and the BBC's
+Hans Rosling's [animated bubble charts](https://www.youtube.com/watch?v=hVimVzgtD6w) — popularised by Gapminder and the BBC's
 *Joy of Stats* — were originally powered by Google's Motion Chart, which
 required Adobe Flash.  Flash reached end-of-life in December 2020 and is now
 blocked by every major browser.  The `googleVis` package still carries
