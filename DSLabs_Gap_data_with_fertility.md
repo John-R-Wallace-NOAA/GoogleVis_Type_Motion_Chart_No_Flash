@@ -58,7 +58,31 @@ Life expectancy by fertility
                        
 <br>
 <br>     
+# Life expectancy by fertility for United States and Vietnam only (Hans uses this example) <br>
+&nbsp;&nbsp; # Note that the trail length is now the number or rows of the data, this more matches Hans example.
 
+
+     US.Viet <- gap_dslabs[gap_dslabs$country %in% c('United States', 'Vietnam'), ]    
+     
+     motionChart(US.Viet,
+               id           = "country",
+               time         = "year",
+               x            = "fertility",
+               y            = "life_expectancy",
+               size         = "population",
+               color        = "continent",
+               x_log        = FALSE,
+               duration     = 20000,
+               trails       = TRUE,
+               trail_length = nrow(US.Viet),
+              hover_focus   = c("group", "entity")[1],
+             tooltip_follow = FALSE,
+               label_colour = TRUE,
+               x_label      = "Fertility rate, total (births per woman)",
+               y_label      = "Life Expectancy",
+               title        = "Gapminder — US and Vietnam")          
+<br>
+<br>             
 Fertility rate vs. infant mortality, sized by population
 
 
