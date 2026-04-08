@@ -501,9 +501,9 @@ function(el, x) {
   // play/pause — pause uses inline SVG for slim proportions since the Unicode
   // pause character is too wide/squatty on most system fonts.
   var PLAY_HTML  = "&#9654;";
-  var PAUSE_HTML = \'<svg width="14" height="18" viewBox="0 0 14 18" style="vertical-align:middle">\' +
-                   \'<rect x="1" y="1" width="4" height="16" rx="1" fill="currentColor"/>\' +
-                   \'<rect x="9" y="1" width="4" height="16" rx="1" fill="currentColor"/>\' +
+  var PAUSE_HTML = \'<svg width="12" height="16" viewBox="0 0 12 16" style="vertical-align:middle">\' +
+                   \'<rect x="1" y="1" width="3" height="12" rx="1" fill="currentColor"/>\' +
+                   \'<rect x="7" y="1" width="3" height="12" rx="1" fill="currentColor"/>\' +
                    \'</svg>\';
 
   var playBtn = document.createElement("button");
