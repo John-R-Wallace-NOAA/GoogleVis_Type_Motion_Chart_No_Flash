@@ -80,8 +80,8 @@ motionChart(gap_dslabs,
             id    = "country",
             time  = "year",
             x     = "gdpPercap",
-            y     = "lifeExp",
-            size  = "pop",
+            y     = "life_expectancy",
+            size  = "population",
             color = "continent",
             title = "Gapminder — Health & Wealth of Nations")
 ```
