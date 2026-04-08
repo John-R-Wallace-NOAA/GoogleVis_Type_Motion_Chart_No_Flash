@@ -11,7 +11,7 @@
 
 <br>
 <br>
-Life expectancy by gross domestic product per capita (billions) 
+Life expectancy by gross domestic product per capita
 
 
      motionChart(gap_dslabs,
