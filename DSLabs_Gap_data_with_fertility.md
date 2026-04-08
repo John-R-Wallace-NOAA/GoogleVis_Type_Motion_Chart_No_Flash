@@ -1,4 +1,4 @@
-
+     library(MotionChart)
      gap_dslabs <- load_gapminder_dslabs()
        
                    country year infant_mortality life_expectancy   fertility   population         gdp  continent          region gdpPercap
