@@ -23,7 +23,7 @@ Life expectancy by gross domestic product per capita
                size         = "population",
                color        = "continent",
                x_log        = TRUE,
-               duration     = 17000,  # Larger values move the bubbles slower
+               duration     = 17000, 
                trails       = TRUE,
                trail_length = 4,
               hover_focus   = c("group", "entity")[1],
