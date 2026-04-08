@@ -1,5 +1,8 @@
 # MotionChart — Flash-Free Animated Motion Charts from R
 <br>
+[Click on the image for an interactive demo:](https://github.com/John-R-Wallace-NOAA/GoogleVis_Type_Motion_Chart_No_Flash/blob/main/Images/Gapminder_LifeExp_vs_Fertility.gif)
+<br>
+
 [![Click on the image for an interactive demo:](https://github.com/John-R-Wallace-NOAA/GoogleVis_Type_Motion_Chart_No_Flash/blob/main/Images/Gapminder_LifeExp_vs_Fertility.gif)](https://john-r-wallace-noaa.github.io)
 <br>
 <br>
