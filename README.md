@@ -91,23 +91,23 @@ motionChart(gap_dslabs,
 ## Full Argument Reference
 
 ```r
-motionChart(gap,
+motionChart(gap_dslabs,
             id             = "country",
             time           = "year",
             x              = "gdpPercap",
-            y              = "lifeExp",
-            size           = "pop",           # NULL = uniform bubble size
+            y              = "life_expectancy",
+            size           = "population",    # NULL = uniform bubble size
             color          = "continent",     # NULL = single colour
             x_log          = TRUE,            # log scale on x axis
             y_log          = FALSE,           # log scale on y axis
             x_label        = "GDP per Capita (USD)",  # NULL = auto title-case
             y_label        = "Life Expectancy",
             size_scale     = c(10, 60),       # min/max bubble radius in pixels
-            duration       = 17000L,          # total playback ms for one pass
+            duration       = 17000L,          # total playback ms for one pass, larger numbers are slower movement
             label_size     = NULL,            # NULL = auto from entity count
             label_colour   = TRUE,            # labels match bubble colour
             trails         = TRUE,            # show trailing lines + ghost bubbles
-            trail_length   = 4L,              # real time steps to trail back
+            trail_length   = 4L,              # real time steps to trail back, can be set to the total num of rows of the data, e.g. nrow(gap_dslab)
             hover_focus    = c("group", "entity")[1],  # what hover highlights
             tooltip_follow = FALSE,           # TRUE = tip moves with bubble
             title          = "Gapminder — Health & Wealth of Nations",
@@ -164,7 +164,7 @@ The chart renders a control bar below the plot with:
 | Click bubble | Locks the highlight; info box stays pinned |
 | Click same bubble again | Releases the lock |
 | Click empty chart area | Releases the lock |
-| Click legend item | Toggles that group on/off; trails follow |
+| Click legend item | Toggles that group on/off; trails follow |  # This can only be used when the slider (time) is paused.
 
 ---
 
