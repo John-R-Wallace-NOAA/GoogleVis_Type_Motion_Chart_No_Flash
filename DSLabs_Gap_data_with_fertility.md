@@ -1,6 +1,9 @@
      library(MotionChart)
      gap_dslabs <- load_gapminder_dslabs()
      head(gap_dslabs)
+     #
+     
+
        
                    country year infant_mortality life_expectancy   fertility   population         gdp  continent          region gdpPercap
      1             Albania 1960           115.40           62.87        6.19      1636054           NA    Europe Southern Europe        NA
