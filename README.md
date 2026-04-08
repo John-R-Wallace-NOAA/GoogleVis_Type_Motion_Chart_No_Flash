@@ -65,6 +65,7 @@ if (!any(installed.packages()[, 1] %in% "remotes"))
   install.packages("remotes")
 
 remotes::install_github("John-R-Wallace-NOAA/GoogleVis_Type_Motion_Chart_No_Flash")
+#
 ```
 
 ---
