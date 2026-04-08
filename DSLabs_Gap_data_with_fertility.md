@@ -103,5 +103,6 @@ Fertility rate vs. infant mortality, sized by population
 
 More Gapminder data: https://www.gapminder.org/data/            
 
-A Gapminder bubble chart is here: https://observablehq.com/@gapminder/bubblechart-tutorial-solved
+A Gapminder bubble chart is here: https://observablehq.com/@gapminder/bubblechart-tutorial-solved <br>
+(Of course, the motionChart function will handle any data of the correct format and has trails.)
 
