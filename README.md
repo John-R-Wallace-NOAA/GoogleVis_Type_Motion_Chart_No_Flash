@@ -74,9 +74,9 @@ remotes::install_github("John-R-Wallace-NOAA/GoogleVis_Type_Motion_Chart_No_Flas
 ```r
 library(MotionChart)
 
-gap <- load_gapminder()
+gap_dslabs <- load_gapminder_dslabs()
 
-motionChart(gap,
+motionChart(gap_dslabs,
             id    = "country",
             time  = "year",
             x     = "gdpPercap",
@@ -172,7 +172,7 @@ The chart renders a control bar below the plot with:
 
 ```r
 # Load the classic Gapminder dataset (auto-installs gapminder package if needed)
-gap <- load_gapminder()
+gap_dslabs <- load_gapminder_dslabs()
 ```
 
 ---
