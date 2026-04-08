@@ -131,9 +131,9 @@ and hover/click selection.
 }
 \examples{
 \dontrun{
-gap <- load_gapminder()
+gap_dslabs <- load_gapminder_dslabs()
 
-motionChart(gap,
+motionChart(gap_dslabs,
             id             = "country",
             time           = "year",
             x              = "gdpPercap",
