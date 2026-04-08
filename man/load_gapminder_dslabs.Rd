@@ -7,8 +7,8 @@
 load_gapminder_dslabs()
 }
 \value{
-A data frame with columns: country, year, infant_mortality, life_expectancy, fertility, population, gdp, continent, region, gdp_bil
+A data frame with columns: country, year, infant_mortality, life_expectancy, fertility, population, gdp, continent, region, gdpPercap
 }
 \description{
-Load the dslabs Gapminder dataset. 'gdp_bil' is 'gdp' in billions.
+Load the dslabs Gapminder dataset
 }
