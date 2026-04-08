@@ -2,8 +2,10 @@
 <br>
 [Click on the image for an interactive demo:](https://github.com/John-R-Wallace-NOAA/GoogleVis_Type_Motion_Chart_No_Flash/blob/main/Images/Gapminder_LifeExp_vs_Fertility.gif)
 <br>
+<br>
 [test](https://John-R-Wallace-NOAA.github.io)
-
+<br>
+<br>
 [![Click on the image for an interactive demo:](https://github.com/John-R-Wallace-NOAA/GoogleVis_Type_Motion_Chart_No_Flash/blob/main/Images/Gapminder_LifeExp_vs_Fertility.gif)](https://john-r-wallace-noaa.github.io)
 <br>
 <br>
