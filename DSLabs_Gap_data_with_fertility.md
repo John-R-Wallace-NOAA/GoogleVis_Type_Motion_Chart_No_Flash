@@ -90,7 +90,7 @@ Life expectancy by fertility
 Fertility rate vs. infant mortality, sized by population
 
 
-     motionChart(gap_dslabs,          # dslabs::gapminder, not the gapminder package
+     motionChart(gap_dslabs,        
                  id       = "country",
                  time     = "year",
                  x        = "fertility",
