@@ -31,8 +31,7 @@ Life expectancy by gross domestic product per capita
                label_colour = TRUE,
                x_label      = "Gross Domestic Product per Capita",
                y_label      = "Life Expectancy",
-               title        = "Gapminder — Health & Wealth of Nations")  
-               cat("\n")  # Runs the code without and extra 'Enter' needed
+               title        = "Gapminder — Health & Wealth of Nations"); cat("\n")  # Runs the code without and extra 'Enter' needed
 
                
 <br>
