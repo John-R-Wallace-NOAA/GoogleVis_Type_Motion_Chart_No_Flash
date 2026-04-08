@@ -56,7 +56,8 @@ Life expectancy by fertility
                label_colour = TRUE,
                x_label      = "Fertility rate, total (births per woman)",
                y_label      = "Life Expectancy",
-               title        = "Gapminder — Health & Wealth of Nations")          
+               title        = "Gapminder — Health & Wealth of Nations")  
+               # 
                        
 <br>
 <br>     
@@ -82,7 +83,8 @@ Life expectancy by fertility
                label_colour = TRUE,
                x_label      = "Fertility rate, total (births per woman)",
                y_label      = "Life Expectancy",
-               title        = "Gapminder — US and Vietnam")          
+               title        = "Gapminder — US and Vietnam")  
+               #
 <br>
 <br>             
 Fertility rate vs. infant mortality, sized by population
@@ -98,7 +100,8 @@ Fertility rate vs. infant mortality, sized by population
                  x_log    = FALSE,
                duration   = 30000,  # Larger values move the bubbles slower
            tooltip_follow = FALSE,
-                 title    = "Fertility & Infant Mortality - After Hans Rosling")    
+                 title    = "Fertility & Infant Mortality - After Hans Rosling")   
+                 # 
             
 
 <br>
