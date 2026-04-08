@@ -1,5 +1,5 @@
 #' Load the dslabs Gapminder dataset
-#' @return A data frame with columns: country, year, infant_mortality, life_expectancy, fertility, population, gdp, continent, region, gdp_bil
+#' @return A data frame with columns: country, year, infant_mortality, life_expectancy, fertility, population, gdp, continent, region, gdpPercap
 #' @export
 load_gapminder_dslabs <- 
 function () 
@@ -10,6 +10,6 @@ function ()
     }
     
     gap_dslabs <- dslabs::gapminder
-    gap_dslabs$gdp_bil <- gap_dslabs$gdp/1e9
+    gap_dslabs$gdpPercap <- gap_dslabs$gdp/gap_dslabs$population
     gap_dslabs
 }
