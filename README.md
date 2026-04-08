@@ -1,4 +1,8 @@
 # MotionChart — Flash-Free Animated Motion Charts from R
+<br>
+[![Click on the image for an interactive demo:](images/Gapminder_LifeExp_vs_Fertility.png)](https://john-r-wallace-noaa.github.io/)
+<br>
+<br>
 
 A drop-in spiritual successor to `googleVis::gvisMotionChart` built on
 [echarts4r](https://echarts4r.john-coene.com/) and Apache ECharts.  No Flash,
