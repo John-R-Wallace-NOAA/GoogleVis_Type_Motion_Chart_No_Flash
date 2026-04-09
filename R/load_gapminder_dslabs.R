@@ -1,4 +1,4 @@
-#' Load the dslabs Gapminder dataset
+#' Load the DSLabs Gapminder dataset
 #' @return A data frame with columns: country, year, infant_mortality, life_expectancy, fertility, population, gdp, continent, region, gdpPercap
 #' @export
 load_gapminder_dslabs <- 
