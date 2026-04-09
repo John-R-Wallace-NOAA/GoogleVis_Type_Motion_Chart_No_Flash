@@ -88,6 +88,7 @@ motionChart(gap_dslabs,
             size  = "population",
             color = "continent",
             title = "Gapminder — Health & Wealth of Nations")
+saveHtmlFolder()
 ```
 
 ---
