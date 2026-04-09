@@ -89,6 +89,7 @@ motionChart(gap_dslabs,
             color = "continent",
             title = "Gapminder — Health & Wealth of Nations")
 saveHtmlFolder()
+openwd()  # To open the copied motion chart go to the newly created HTML folder and doulble-click on 'index.html'
 ```
 
 ---
