@@ -43,8 +43,8 @@
 #' # Save the most recent HTML widget to an auto-named folder
 #' saveHtmlFolder()
 #'
-#' # Save to a specific folder name without opening the browser
-#' saveHtmlFolder(folderName = "gapminder_motion_chart", view = FALSE)
+#' # Save to a specific folder name and open inside the browser
+#' saveHtmlFolder(folderName = "My_HTML_chart_saved", view = TRUE)
 #'
 #' # Retrieve the second most recent widget folder
 #' saveHtmlFolder(howRecent = 2)
