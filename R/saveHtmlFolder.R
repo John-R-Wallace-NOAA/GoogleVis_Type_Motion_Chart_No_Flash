@@ -13,8 +13,9 @@
 #' @param howRecent   Integer.  Which temp folder to retrieve by recency.
 #'                    \code{1} (default) = the most recently created matching
 #'                    folder; \code{2} = the second most recent, and so on.
-#' @param view        Logical.  If \code{TRUE} (default), opens the saved
+#' @param view        Logical.  If \code{TRUE}, opens the saved
 #'                    \code{index.html} in the default browser after copying.
+#'                    Note that the URL is now the from the copied HTML.
 #' @param pattern     Character string.  Pattern passed to \code{list.files()}
 #'                    to identify HTML widget folders in the temp directory.
 #'                    Default \code{"viewhtml"}, which matches the folders
@@ -50,7 +51,7 @@
 #' }
 #'
 #' @export
-saveHtmlFolder <- function(folderName = NULL, howRecent = 1, view = TRUE, pattern = 'viewhtml') {
+saveHtmlFolder <- function(folderName = NULL, howRecent = 1, view = FALSE, pattern = 'viewhtml') {
 
     Date <- function (Time = FALSE, collapse  = "_") {
     
