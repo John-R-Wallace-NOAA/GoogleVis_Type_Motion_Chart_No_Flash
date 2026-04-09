@@ -2,3 +2,4 @@
 
 export(load_gapminder_dslabs)
 export(motionChart)
+export(saveHtmlFolder)
