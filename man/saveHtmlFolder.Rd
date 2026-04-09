@@ -7,7 +7,7 @@
 saveHtmlFolder(
   folderName = NULL,
   howRecent = 1,
-  view = TRUE,
+  view = FALSE,
   pattern = "viewhtml"
 )
 }
@@ -21,8 +21,9 @@ auto-generated from the current date and time, e.g.
 \code{1} (default) = the most recently created matching
 folder; \code{2} = the second most recent, and so on.}
 
-\item{view}{Logical.  If \code{TRUE} (default), opens the saved
-\code{index.html} in the default browser after copying.}
+\item{view}{Logical.  If \code{TRUE}, opens the saved
+\code{index.html} in the default browser after copying.
+Note that the URL is now the from the copied HTML.}
 
 \item{pattern}{Character string.  Pattern passed to \code{list.files()}
 to identify HTML widget folders in the temp directory.
@@ -58,8 +59,8 @@ in the auto-generated folder name.
 # Save the most recent HTML widget to an auto-named folder
 saveHtmlFolder()
 
-# Save to a specific folder name without opening the browser
-saveHtmlFolder(folderName = "gapminder_motion_chart", view = FALSE)
+# Save to a specific folder name and open inside the browser
+saveHtmlFolder(folderName = "My_HTML_chart_saved", view = TRUE)
 
 # Retrieve the second most recent widget folder
 saveHtmlFolder(howRecent = 2)
