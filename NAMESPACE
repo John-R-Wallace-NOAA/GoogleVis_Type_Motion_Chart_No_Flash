@@ -2,4 +2,5 @@
 
 export(load_gapminder_dslabs)
 export(motionChart)
+export(openwd)
 export(saveHtmlFolder)
