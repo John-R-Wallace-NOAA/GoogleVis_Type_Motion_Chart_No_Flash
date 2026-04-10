@@ -7,6 +7,7 @@ Click on the image for an interactive demo. The demo opens in the same tab, so t
 [One more demo for Han's life expctancy by fertility for USA and Vietnam only](https://john-r-wallace-noaa.github.io/GoogleVis_Type_Motion_Chart_No_Flash/Motion_Chart_Fertility_US_Vietnam.github.io/Fert_US_Viet.htm)
 <br>
 <br>
+<br>
 A drop-in spiritual successor to `googleVis::gvisMotionChart` built on
 [echarts4r](https://echarts4r.john-coene.com/) and Apache ECharts.  No Flash,
 no browser plugin, no data uploaded anywhere.  All animation runs client-side
