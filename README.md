@@ -2,6 +2,7 @@
 Click on the image for an interactive demo. The demo opens in the same tab, so to go back to GitHub, click the back arrow. <br>
 (The demo works well, if it appears not to be working correctly, try a reload.)
 [![ ](https://github.com/John-R-Wallace-NOAA/GoogleVis_Type_Motion_Chart_No_Flash/blob/main/Images/Gapminder_LifeExp_vs_Fertility.gif)](https://john-r-wallace-noaa.github.io)
+[test](https://john-r-wallace-noaa.github.io)
 [![ ]Another demo for Han's life expctancy by fertility for USA and Vietnam only](https://john-r-wallace-noaa.github.io](https://john-r-wallace-noaa.github.io/GoogleVis_Type_Motion_Chart_No_Flash/Motion_Chart_Fertility_US_Vietnam.github.io/Fert_US_Viet.htm)
 A drop-in spiritual successor to `googleVis::gvisMotionChart` built on
 [echarts4r](https://echarts4r.john-coene.com/) and Apache ECharts.  No Flash,
