@@ -1,0 +1,51 @@
+10 Apr 2026
+
+---
+
+**Project: MotionChart R Package**
+GitHub: `John-R-Wallace-NOAA/GoogleVis_Type_Motion_Chart_No_Flash`
+
+Flash-free replacement for `googleVis::gvisMotionChart` using `echarts4r`. Animation runs via JavaScript `requestAnimationFrame` loop with client-side interpolation. Data stays local.
+
+**Key files:** `R/motionChart.R`, `R/saveHtmlFolder.R`, `DESCRIPTION`, `man/`
+
+**Main function signature:**
+```r
+motionChart(data, id, time, x, y,
+            size=NULL, color=NULL,
+            x_log=TRUE, y_log=FALSE,
+            x_label=NULL, y_label=NULL,
+            size_scale=c(10,60), duration=17000L,
+            label_size=NULL, label_colour=TRUE,
+            trails=TRUE, trail_length=4L,
+            hover_focus=c("group","entity")[1],
+            tooltip_follow=FALSE,
+            title=NULL, theme="default",
+            width="100%", height="600px")
+```
+
+**Architecture:**
+- R builds ECharts option object via `e_list()`, injects data/config as named `__PLACEHOLDERS__` replaced by `gsub(..., fixed=TRUE)` — avoids `sprintf` `%` parsing issues
+- JS template in single-quoted R string — no apostrophes or non-ASCII chars in `#'` roxygen lines
+- Series order: `trail_line × nGroups`, `trail_ghost × nGroups`, `bubble × nGroups`
+- Colours set explicitly in R using ECharts 5 default palette, passed as `__GROUPCOLORS__`
+- Axes fixed via JS function form: `min: htmlwidgets::JS("function(v){ return X; }")`
+- `smart_decimals()` uses `min(vals)` with log10 for tooltip decimal places
+- SVG pause icon uses escaped single quotes: `\'<svg...>\'`
+
+**Hover/click system:**
+- `mouseover`/`mouseout` drive `hoverName` + `hoverGroup`
+- `click` drives `highlightedName` (persists); click again or empty space clears
+- Non-active bubbles omitted from `bubbleData` entirely (not just opacity 0) so ECharts hit-testing skips them
+- ECharts tooltip disabled (`show=FALSE`); custom `pinnedTip` div handles all tooltip display using `chart.convertToPixel()`
+- `legendselectchanged` event updates `legendSelected`
+
+**Known idioms used:**
+- Argument options shown as `c("group","entity")[1]` — change index to switch
+- `hover_focus` validated with `match.arg()`
+- Non-ASCII chars (`—`, `→`) forbidden in `#'` roxygen lines — causes silent `.Rd` generation failure
+- `@export` required on all public functions or no `.Rd` is generated
+- `roxygenise()` must run on source repo root, not installed library path
+- File must be in `R/` subfolder for roxygen2 to find it
+
+**Pending features to add:** axis variable switcher (Shiny), additional themes/options, more dataset examples (DSLabs fertility data added as second example)
