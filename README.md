@@ -16,9 +16,12 @@ in the browser via a `requestAnimationFrame` loop; data stays local.
 <br>
 Created by brainstorming sessions (8+ hours) with ChatGPT, 
 and having a failed start before deciding the best path forward was to use echarts4r. The heavy lift coding was done by Claude, but I did have
-some good coding inputs. However, I mostly contributed design ideas and what features to add. A strange new world, you direct the process, 
-but sometimes you are just the monkey running code for AI and telling it what you see. If you need something customized, 
-one approach is to just fork the repo and tell Claude or another AI what you need.
+some good coding inputs. However, I mostly contributed design ideas and what features to add. Claude did lead me astray by finding and quickly
+using an R package that had Gapminder data without fertility information and with data only every 5 years. Without too much effort I found the DSLabs
+R package which had more complete Gapminder data.
+
+A strange new world, you direct the process, but sometimes you are just the monkey running code for AI and telling it what you see. If you need something customized, 
+one approach is to just fork the repo, upload the necessary code file(s) and tell Claude or another AI what you need.
 
 ---
 
