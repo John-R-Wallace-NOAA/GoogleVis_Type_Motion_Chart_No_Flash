@@ -524,11 +524,6 @@ function(el, x) {
   timeLabel.style.cssText = "font-size:13px;min-width:50px;text-align:right;white-space:nowrap;color:#888;";
   timeLabel.textContent   = String(timeSteps[0]);
 
-  // separator
-  var sep = document.createElement("span");
-  sep.textContent   = "|";
-  sep.style.cssText = "color:#ccc;flex-shrink:0;";
-
   // Trails toggle button
   var trailsBtn = document.createElement("button");
   trailsBtn.title = "Toggle trails";
@@ -543,15 +538,10 @@ function(el, x) {
   }
   updateTrailsBtn();
 
-  // separator 2
-  var sep2 = document.createElement("span");
-  sep2.textContent   = "|";
-  sep2.style.cssText = "color:#ccc;flex-shrink:0;";
-
   // font-size label
   var fsLabel = document.createElement("span");
   fsLabel.style.cssText = "font-size:11px;color:#666;white-space:nowrap;";
-  fsLabel.textContent   = "label px";
+  fsLabel.textContent   = "Label px";
 
   // A- button
   var btnSmaller = document.createElement("button");
@@ -573,9 +563,7 @@ function(el, x) {
   ctrlDiv.appendChild(playBtn);
   ctrlDiv.appendChild(slider);
   ctrlDiv.appendChild(timeLabel);
-  ctrlDiv.appendChild(sep);
   ctrlDiv.appendChild(trailsBtn);
-  ctrlDiv.appendChild(sep2);
   ctrlDiv.appendChild(fsLabel);
   ctrlDiv.appendChild(btnSmaller);
   ctrlDiv.appendChild(fsReadout);
@@ -754,8 +742,12 @@ function(el, x) {
         opacity   : 1
       };
     }
+    var lCol = labelColour ? "inherit" : "#555";
     for (var g = 0; g < nGroups; g++) {
-      seriesUpdate[bubbleIdx(g)] = { data: fd.bubbleData[g] };
+      seriesUpdate[bubbleIdx(g)] = {
+        data  : fd.bubbleData[g],
+        label : { fontSize: labelFontSize, color: lCol }
+      };
     }
 
     var pinnedName = highlightedName !== null ? highlightedName : hoverName;
@@ -828,12 +820,7 @@ function(el, x) {
   function applyLabelSize(sz) {
     labelFontSize         = Math.max(6, Math.min(24, sz));
     fsReadout.textContent = String(labelFontSize);
-    var col = labelColour ? "inherit" : "#555";
-    var seriesUpdate = [];
-    for (var g = 0; g < nGroups; g++) {
-      seriesUpdate[bubbleIdx(g)] = { label: { fontSize: labelFontSize, color: col } };
-    }
-    chart.setOption({ series: seriesUpdate }, false);
+    renderFrame(startProg);
   }
 
   // ── animation state ────────────────────────────────────────────────────
