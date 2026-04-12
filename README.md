@@ -1,10 +1,10 @@
 # MotionChart — Flash-Free Animated Motion Charts from R
 Click on the image for an interactive demo. The demo opens in the current tab, so click the back arrow to go back to GitHub. <br>
-(The demo works well, if it appears not to be working correctly, try a reload.)
+(The demo works well, in the rare case it appears not to be working correctly, try a reload.)
 [![ ](https://github.com/John-R-Wallace-NOAA/GoogleVis_Type_Motion_Chart_No_Flash/blob/main/Images/Gapminder_LifeExp_vs_Fertility.gif)](https://john-r-wallace-noaa.github.io)
 <br>
 <br>
-[One more demo for Han Rosling's life expectancy by fertility for USA and Vietnam only](https://john-r-wallace-noaa.github.io/GoogleVis_Type_Motion_Chart_No_Flash/Fertility_US_Viet.github.io/Fert_US_Viet.htm)
+[One more demo for Hans Rosling's life expectancy by fertility for USA and Vietnam only](https://john-r-wallace-noaa.github.io/GoogleVis_Type_Motion_Chart_No_Flash/Fertility_US_Viet.github.io/Fert_US_Viet.htm)
 <br>
 <br>
 <br>
