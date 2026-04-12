@@ -16,6 +16,7 @@ motionChart(
   y_log = FALSE,
   x_label = NULL,
   y_label = NULL,
+  time_label = NULL,
   size_scale = c(10, 60),
   duration = 17000L,
   label_size = NULL,
@@ -53,6 +54,8 @@ motionChart(
 \item{x_label}{X-axis label string.  \code{NULL} = auto title-case of column name.}
 
 \item{y_label}{Y-axis label string.  \code{NULL} = auto title-case of column name.}
+
+\item{time_label}{Time axis label string.  \code{NULL} = auto title-case of column name.}
 
 \item{size_scale}{Length-2 numeric vector: min and max bubble radius in pixels.
 Default \code{c(10, 60)}.}

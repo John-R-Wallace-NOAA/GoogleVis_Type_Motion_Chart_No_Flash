@@ -2,7 +2,7 @@
 % Please edit documentation in R/load_gapminder_dslabs.R
 \name{load_gapminder_dslabs}
 \alias{load_gapminder_dslabs}
-\title{Load the dslabs Gapminder dataset}
+\title{Load the DSLabs Gapminder dataset}
 \usage{
 load_gapminder_dslabs()
 }
