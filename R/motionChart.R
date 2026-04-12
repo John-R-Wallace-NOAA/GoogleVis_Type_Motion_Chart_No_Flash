@@ -31,6 +31,7 @@
 #' @param y_log         Logical.  Use log scale on y-axis?  Default \code{FALSE}.
 #' @param x_label       X-axis label string.  \code{NULL} = auto title-case of column name.
 #' @param y_label       Y-axis label string.  \code{NULL} = auto title-case of column name.
+#' @param time_label    Time axis label string.  \code{NULL} = auto title-case of column name.
 #' @param size_scale    Length-2 numeric vector: min and max bubble radius in pixels.
 #'                      Default \code{c(10, 60)}.
 #' @param duration      Total playback duration in milliseconds for one full pass through
@@ -120,6 +121,7 @@ motionChart <- function(data,
                         y_log      = FALSE,
                         x_label    = NULL,
                         y_label    = NULL,
+                        time_label = NULL,
                         size_scale    = c(10, 60),
                         duration      = 17000L,
                         label_size    = NULL,
@@ -225,7 +227,7 @@ motionChart <- function(data,
   }
   if (is.null(x_label))    x_label    <- title_case(x)
   if (is.null(y_label))    y_label    <- title_case(y)
-  time_label <- title_case(time)
+  if (is.null(time_label)) time_label <- title_case(time)
 
   # ── 1. select & arrange ────────────────────────────────────────────────────
   df <- data %>%
