@@ -153,9 +153,12 @@ motionChart(gap_dslabs,
 
 ### Themes
 
-Any echarts4r theme name: `"default"`, `"dark"`, `"vintage"`, `"westeros"`,
-`"essos"`, `"wonderland"`, `"walden"`, `"chalk"`, `"infographic"`,
-`"macarons"`, `"roma"`, `"shine"`, `"purple-passion"`, `"halloween"`.
+Any echarts4r theme: 
+
+- **Dark-toned:** dark, chalk, dark-blue, dark-bold, dark-digerati, dark-fresh-cut, dark-mushroom.
+- **Bright/Colorful:** westeros, essos, wonderland, macarons, macarons2, shine.
+- **Subtle/Classic:** vintage, walden, roma, infographic, azul, gray.
+- **Specialized:** purple-passion, halloween, caravan, carp, forest, fruit, helianthus, inspired, london, mint, red, red-velvet, royal, sakura, tech-blue. 
 
 ---
 
