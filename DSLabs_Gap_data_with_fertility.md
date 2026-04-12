@@ -35,8 +35,11 @@ Life expectancy by gross domestic product per capita
                label_colour = TRUE,
                x_label      = "Gross Domestic Product per Capita",
                y_label      = "Life Expectancy",
+                 theme      = "tech-blue"
                title        = "Gapminder — Health & Wealth of Nations")
-               # 
+       
+      # saveHtmlFolder()
+      # openwd()  # To open the copied motion chart go to the newly created HTML folder and doulble-click on 'index.html'
 
                
 <br>
@@ -60,13 +63,16 @@ Life expectancy by fertility
                label_colour = TRUE,
                x_label      = "Fertility rate, total (births per woman)",
                y_label      = "Life Expectancy",
+               theme        = "tech-blue"
                title        = "Gapminder — Health & Wealth of Nations")  
-               # 
+               
+      # saveHtmlFolder()
+      # openwd()  # To open the copied motion chart go to the newly created HTML folder and doulble-click on 'index.html'
                        
 <br>
 <br>     
 # Life expectancy by fertility for United States and Vietnam only (Hans uses this example) <br>
-&nbsp;&nbsp; # Note that the trail length is now the number or rows of the data, this more matches Hans example.
+&nbsp;&nbsp;&nbsp; # Note that the trail length is now the number or rows of the data, this more matches Hans' example.
 
 
      US.Viet <- gap_dslabs[gap_dslabs$country %in% c('United States', 'Vietnam'), ]    
@@ -87,8 +93,11 @@ Life expectancy by fertility
                label_colour = TRUE,
                x_label      = "Fertility rate, total (births per woman)",
                y_label      = "Life Expectancy",
+               theme        = "tech-blue"
                title        = "Gapminder — US and Vietnam")  
-               #
+               
+      # saveHtmlFolder()
+      # openwd()  # To open the copied motion chart go to the newly created HTML folder and doulble-click on 'index.html'
 <br>
 <br>             
 Fertility rate vs. infant mortality, sized by population
@@ -104,15 +113,15 @@ Fertility rate vs. infant mortality, sized by population
                  x_log    = FALSE,
                duration   = 30000,  # Larger values move the bubbles slower
            tooltip_follow = FALSE,
+                 theme    = "tech-blue"
                  title    = "Fertility & Infant Mortality - After Hans Rosling")   
-                 # 
-            
-
+                 
+      # saveHtmlFolder()
+      # openwd()  # To open the copied motion chart go to the newly created HTML folder and doulble-click on 'index.html'
+    
 <br>
 <br>        
 
 More Gapminder data: https://www.gapminder.org/data/            
-
-A Gapminder bubble chart is here: https://observablehq.com/@gapminder/bubblechart-tutorial-solved <br>
-(Of course, the motionChart function will handle any data of the correct format and has trails.)
-
+ 
+A non-R Gapminder bubble chart is here: https://observablehq.com/@gapminder/bubblechart-tutorial-solved <br>
