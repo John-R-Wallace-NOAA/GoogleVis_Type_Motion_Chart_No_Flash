@@ -119,6 +119,7 @@ motionChart(gap_dslabs,
             y_log          = FALSE,           # log scale on y axis
             x_label        = "GDP per Capita (USD)",  # NULL = auto title-case
             y_label        = "Life Expectancy",
+         time_label        = NULL             # The time label is left at "Year", title_case() of the time argumnet "year"
             size_scale     = c(10, 60),       # min/max bubble radius in pixels
             duration       = 17000L,          # total playback ms for one pass, larger numbers are slower movement
             label_size     = NULL,            # NULL = auto from entity count
