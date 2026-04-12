@@ -35,7 +35,7 @@ Life expectancy by gross domestic product per capita
                label_colour = TRUE,
                x_label      = "Gross Domestic Product per Capita",
                y_label      = "Life Expectancy",
-                 theme      = "tech-blue"
+                 theme      = "tech-blue",
                title        = "Gapminder — Health & Wealth of Nations")
        
       # saveHtmlFolder()
@@ -63,7 +63,7 @@ Life expectancy by fertility
                label_colour = TRUE,
                x_label      = "Fertility rate, total (births per woman)",
                y_label      = "Life Expectancy",
-               theme        = "tech-blue"
+               theme        = "tech-blue",
                title        = "Gapminder — Health & Wealth of Nations")  
                
       # saveHtmlFolder()
@@ -93,7 +93,7 @@ Life expectancy by fertility
                label_colour = TRUE,
                x_label      = "Fertility rate, total (births per woman)",
                y_label      = "Life Expectancy",
-               theme        = "tech-blue"
+               theme        = "tech-blue",
                title        = "Gapminder — US and Vietnam")  
                
       # saveHtmlFolder()
@@ -113,7 +113,7 @@ Fertility rate vs. infant mortality, sized by population
                  x_log    = FALSE,
                duration   = 30000,  # Larger values move the bubbles slower
            tooltip_follow = FALSE,
-                 theme    = "tech-blue"
+                 theme    = "tech-blue",
                  title    = "Fertility & Infant Mortality - After Hans Rosling")   
                  
       # saveHtmlFolder()
