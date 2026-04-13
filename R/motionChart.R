@@ -185,6 +185,8 @@ motionChart <- function(data,
       step      <- magnitude / 2
       nice_lo   <- floor(padded_lo   / step) * step
       nice_hi   <- ceiling(padded_hi / step) * step
+      # If all data values are non-negative, never let the axis go below 0
+      if (lo >= 0) nice_lo <- max(nice_lo, 0)
       list(min = nice_lo, max = nice_hi)
     }
   }
@@ -424,8 +426,8 @@ motionChart <- function(data,
   # ── 8. build widget ────────────────────────────────────────────────────────
   widget <- e_charts(width = width, height = height) |>
     e_theme(theme) |>
-    e_list(echart_option)
-
+    e_list(echart_option) 
+    
   # ── 9. JS animation + controls ────────────────────────────────────────────
   # Use paste0() rather than sprintf() so that % in CSS (width:100%) and any
   # Unicode characters in the JS string are never misread as format specifiers.
@@ -592,18 +594,47 @@ function(el, x) {
   }
 
   // Return interpolated {x,y,r} for entity at fractional timeline position prog.
+  // Uses the actual time values stored in each frame rather than positional
+  // indexing, so entities with irregular or late-starting data appear and
+  // disappear at the correct times.
   function interpEntity(ent, prog) {
-    var maxIdx = timeSteps.length - 1;
-    var scaled = Math.max(0, Math.min(1, prog)) * maxIdx;
-    var idx0   = Math.min(Math.floor(scaled), maxIdx - 1);
-    var idx1   = idx0 + 1;
-    var alpha  = scaled - idx0;
-    var f0 = ent.frames[idx0], f1 = ent.frames[idx1];
-    if (!f0 || !f1) return null;
+    var nFrames = ent.frames.length;
+    if (nFrames === 0) return null;
+
+    var maxIdx   = timeSteps.length - 1;
+    var scaled   = Math.max(0, Math.min(1, prog)) * maxIdx;
+    var idx0     = Math.min(Math.floor(scaled), maxIdx - 1);
+    var idx1     = idx0 + 1;
+    var alpha    = scaled - idx0;
+    // Current time value (interpolated between two global time steps)
+    var tNow     = timeSteps[idx0] + alpha * (timeSteps[idx1] - timeSteps[idx0]);
+
+    var tFirst = ent.frames[0].t;
+    var tLast  = ent.frames[nFrames - 1].t;
+
+    // Entity has not appeared yet — hide it entirely
+    if (tNow < tFirst) return null;
+
+    // Entity data has ended — freeze at last known position
+    if (tNow >= tLast) {
+      var f = ent.frames[nFrames - 1];
+      return { x: f.x, y: f.y, r: f.r };
+    }
+
+    // Binary search for the two frames bracketing tNow
+    var lo = 0, hi = nFrames - 1;
+    while (hi - lo > 1) {
+      var mid = (lo + hi) >> 1;
+      if (ent.frames[mid].t <= tNow) lo = mid; else hi = mid;
+    }
+    var f0 = ent.frames[lo];
+    var f1 = ent.frames[hi];
+    var span = f1.t - f0.t;
+    var a    = (span > 0) ? (tNow - f0.t) / span : 0;
     return {
-      x: lerp(f0.x, f1.x, alpha),
-      y: lerp(f0.y, f1.y, alpha),
-      r: lerp(f0.r, f1.r, alpha)
+      x: f0.x + a * (f1.x - f0.x),
+      y: f0.y + a * (f1.y - f0.y),
+      r: f0.r + a * (f1.r - f0.r)
     };
   }
 
