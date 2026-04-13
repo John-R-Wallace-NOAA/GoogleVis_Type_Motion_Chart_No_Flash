@@ -4,10 +4,10 @@ Click on the image for an interactive demo. The demo opens in the current tab, s
 [![ ](https://github.com/John-R-Wallace-NOAA/GoogleVis_Type_Motion_Chart_No_Flash/blob/main/Images/Gapminder_LifeExp_vs_Fertility.gif)](https://john-r-wallace-noaa.github.io)
 <br>
 <br>
-Next is a demo for Hans Rosling's life expectancy by fertility for USA and Vietnam only](https://john-r-wallace-noaa.github.io/GoogleVis_Type_Motion_Chart_No_Flash/Fertility_US_Viet.github.io/Fert_US_Viet.htm)
+[Next is a demo for Hans Rosling's life expectancy by fertility for USA and Vietnam only](https://john-r-wallace-noaa.github.io/GoogleVis_Type_Motion_Chart_No_Flash/Fertility_US_Viet.github.io/Fert_US_Viet.htm)
 <br>
 <br>
-The final demo is of COVID deaths per cases from the previous month for select US states.](https://john-r-wallace-noaa.github.io/GoogleVis_Type_Motion_Chart_No_Flash/COVID_Deaths/COVID_Deaths_US_States.htm)
+[The final demo is of COVID deaths per cases from the previous month for select US states.](https://john-r-wallace-noaa.github.io/GoogleVis_Type_Motion_Chart_No_Flash/COVID_Deaths/COVID_Deaths_US_States.htm)
 <br>
 <br>
 <br>
