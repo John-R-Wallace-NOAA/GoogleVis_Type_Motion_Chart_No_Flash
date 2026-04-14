@@ -12,7 +12,7 @@ motionChart(
   y,
   size = NULL,
   color = NULL,
-  x_log = TRUE,
+  x_log = FALSE,
   y_log = FALSE,
   x_label = NULL,
   y_label = NULL,
@@ -47,7 +47,7 @@ motionChart(
 \item{color}{Column name (string) for categorical colour grouping.
 \code{NULL} = single colour.}
 
-\item{x_log}{Logical.  Use log scale on x-axis?  Default \code{TRUE}.}
+\item{x_log}{Logical.  Use log scale on x-axis?  Default \code{FALSE}.}
 
 \item{y_log}{Logical.  Use log scale on y-axis?  Default \code{FALSE}.}
 
