@@ -87,7 +87,7 @@ smoothly with the selected bubble.}
 
 \item{title}{Optional chart title string.}
 
-\item{theme}{echarts4r theme name.  One of \code{"default"}, \code{"dark"},
+\item{theme}{echarts4r theme name.  E.g. \code{"default"}, \code{"dark"},
 \code{"vintage"}, \code{"westeros"}, \code{"essos"},
 \code{"wonderland"}, \code{"walden"}, \code{"chalk"},
 \code{"infographic"}, \code{"macarons"}, \code{"roma"},
