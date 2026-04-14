@@ -2,7 +2,6 @@
 library(MotionChart)
 gap_dslabs <- load_gapminder_dslabs()
 head(gap_dslabs)
-#
 ```     
 
  <pre><code><sub>  
