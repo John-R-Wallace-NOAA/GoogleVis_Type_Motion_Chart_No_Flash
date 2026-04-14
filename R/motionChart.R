@@ -379,9 +379,7 @@ motionChart <- function(data,
               list(text = as.character(title), left = "center", top = 8)
             else list(),
     tooltip = list(show = FALSE),
-    legend = list(right = 10, top = 60, orient = "vertical",
-                  data      = as.list(groups),   # bubble series only
-                  textStyle = list(fontSize = 15)),
+    legend = list(show = FALSE),   # replaced by custom Color panel in JS
 
     # ── fixed x axis ────────────────────────────────────────────────────────
     # min/max are passed as JS functions rather than raw numbers.
@@ -419,7 +417,7 @@ motionChart <- function(data,
       axisTick     = list(lineStyle = list(width = 2))
     ),
 
-    grid   = list(top = 80, bottom = 100, left = 80, right = 160),
+    grid   = list(top = 80, bottom = 100, left = 80, right = 220),
     series = base_series
   )
 
@@ -467,7 +465,7 @@ function(el, x) {
   var pinnedTip = document.createElement("div");
   pinnedTip.style.cssText = [
     "position:absolute", "display:none", "pointer-events:none",
-    "top:90px", "right:170px",
+    "top:90px", "right:226px",
     "background:rgba(255,255,255,0.96)",
     "color:#333",
     "border:1px solid #ccc",
@@ -587,7 +585,275 @@ function(el, x) {
   var hoverGroup      = null;   // group of hovered entity (for "group" mode)
   for (var g = 0; g < nGroups; g++) legendSelected[groups[g]] = true;
 
-  // Build entity-id → group lookup for fast access in mouseover
+  // ── entity visibility state (individual checkboxes) ───────────────────
+  var entityVisible = {};
+  for (var ei = 0; ei < entities.length; ei++) entityVisible[entities[ei].id] = true;
+
+  // ── right-side panel column ────────────────────────────────────────────
+  // A single absolute-positioned column containing two collapsible sub-panels:
+  //   [Color]      — one checkbox row per group, with color swatch
+  //   [Categories] — one checkbox row per entity, scrollable
+  // The ECharts built-in legend is hidden; this replaces it entirely.
+
+  var PANEL_BTN_CSS = [
+    "font-size:11px", "padding:1px 6px",
+    "border:1px solid #ccc", "border-radius:3px",
+    "background:#f0f0f0", "cursor:pointer", "color:#333"
+  ].join(";");
+
+  // Helper: build a collapsible sub-panel.
+  // Returns { outer, body } where body is the scrollable content div.
+  function makeSubPanel(titleText, maxBodyPx) {
+    var outer = document.createElement("div");
+    outer.style.cssText = [
+      "display:flex", "flex-direction:column",
+      "border-bottom:1px solid #ddd",
+      "flex-shrink:0",
+      "min-height:0"
+    ].join(";");
+
+    // ── title bar (click to collapse/expand) ──────────────────────────
+    var titleBar = document.createElement("div");
+    titleBar.style.cssText = [
+      "display:flex", "align-items:center", "justify-content:space-between",
+      "padding:4px 8px 3px 8px",
+      "cursor:pointer", "user-select:none",
+      "border-bottom:1px solid #ddd",
+      "flex-shrink:0"
+    ].join(";");
+
+    var titleSpan = document.createElement("span");
+    titleSpan.textContent = titleText;
+    titleSpan.style.cssText = "font-weight:600;font-size:12px;color:#444;";
+
+    var chevron = document.createElement("span");
+    chevron.textContent = "v";   // collapse indicator — rotated via CSS when collapsed
+    chevron.style.cssText = "font-size:10px;color:#888;transition:transform 0.15s;font-weight:bold;";
+
+    titleBar.appendChild(titleSpan);
+    titleBar.appendChild(chevron);
+    outer.appendChild(titleBar);
+
+    // ── select-all / deselect-all row ─────────────────────────────────
+    var selRow = document.createElement("div");
+    selRow.style.cssText = "display:flex;gap:4px;padding:3px 8px 3px 8px;flex-shrink:0;";
+    outer.appendChild(selRow);
+
+    // ── scrollable body ───────────────────────────────────────────────
+    var body = document.createElement("div");
+    body.style.cssText = [
+      "overflow-y:auto",
+      "padding:2px 0",
+      "max-height:" + maxBodyPx + "px"
+    ].join(";");
+    outer.appendChild(body);
+
+    // collapse/expand toggle
+    var collapsed = false;
+    function toggleCollapse() {
+      collapsed = !collapsed;
+      selRow.style.display = collapsed ? "none" : "flex";
+      body.style.display   = collapsed ? "none" : "block";
+      chevron.style.transform = collapsed ? "rotate(-90deg)" : "rotate(0deg)";
+    }
+    titleBar.addEventListener("click", toggleCollapse);
+
+    return { outer: outer, body: body, selRow: selRow };
+  }
+
+  // ── outer column wrapper ──────────────────────────────────────────────
+  var sideColumn = document.createElement("div");
+  sideColumn.style.cssText = [
+    "position:absolute",
+    "top:0", "right:0",
+    "width:190px",
+    "bottom:33px",
+    "display:flex", "flex-direction:column",
+    "font-family:sans-serif", "font-size:12px",
+    "border-left:1px solid #ddd",
+    "box-sizing:border-box",
+    "background:rgba(255,255,255,0.97)",
+    "z-index:100",
+    "overflow:hidden"
+  ].join(";");
+
+  // ── COLOR sub-panel ───────────────────────────────────────────────────
+  var colorSub = makeSubPanel("Color", 200);
+
+  // Select all / Deselect all for Color
+  var cBtnAll = document.createElement("button");
+  cBtnAll.textContent = "Select all";
+  cBtnAll.style.cssText = PANEL_BTN_CSS;
+  var cBtnNone = document.createElement("button");
+  cBtnNone.textContent = "Deselect all";
+  cBtnNone.style.cssText = PANEL_BTN_CSS;
+  colorSub.selRow.appendChild(cBtnAll);
+  colorSub.selRow.appendChild(cBtnNone);
+
+  // One checkbox row per group
+  var colorCheckMap = {};   // group → <input>
+  for (var gi2 = 0; gi2 < groups.length; gi2++) {
+    var grp    = groups[gi2];
+    var gcol   = groupColors[gi2] || "#888";
+
+    var crow = document.createElement("label");
+    crow.style.cssText = [
+      "display:flex", "align-items:center", "gap:6px",
+      "padding:2px 8px",
+      "cursor:pointer", "white-space:nowrap", "overflow:hidden"
+    ].join(";");
+    crow.title = grp;
+
+    var ccb = document.createElement("input");
+    ccb.type    = "checkbox";
+    ccb.checked = true;
+    ccb.style.cssText = "margin:0;flex-shrink:0;accent-color:" + gcol + ";cursor:pointer;";
+
+    // Color swatch square
+    var swatch = document.createElement("span");
+    swatch.style.cssText = [
+      "display:inline-block",
+      "width:10px", "height:10px",
+      "border-radius:2px",
+      "background:" + gcol,
+      "flex-shrink:0"
+    ].join(";");
+
+    var glbl = document.createElement("span");
+    glbl.textContent = grp;
+    glbl.style.cssText = "font-size:11px;color:#333;overflow:hidden;text-overflow:ellipsis;";
+
+    crow.appendChild(ccb);
+    crow.appendChild(glbl);
+    colorSub.body.appendChild(crow);
+    colorCheckMap[grp] = ccb;
+
+    (function(groupName) {
+      ccb.addEventListener("change", function() {
+        legendSelected[groupName] = this.checked;
+        // Sync: dim category rows belonging to this group
+        updateCategoryRowDimming();
+        renderFrame(parseFloat(slider.value) / 10000);
+      });
+    })(grp);
+  }
+
+  sideColumn.appendChild(colorSub.outer);
+
+  // Color Select All / Deselect All
+  cBtnAll.addEventListener("click", function() {
+    for (var g2 = 0; g2 < groups.length; g2++) {
+      legendSelected[groups[g2]] = true;
+      if (colorCheckMap[groups[g2]]) colorCheckMap[groups[g2]].checked = true;
+    }
+    updateCategoryRowDimming();
+    renderFrame(parseFloat(slider.value) / 10000);
+  });
+  cBtnNone.addEventListener("click", function() {
+    for (var g2 = 0; g2 < groups.length; g2++) {
+      legendSelected[groups[g2]] = false;
+      if (colorCheckMap[groups[g2]]) colorCheckMap[groups[g2]].checked = false;
+    }
+    updateCategoryRowDimming();
+    renderFrame(parseFloat(slider.value) / 10000);
+  });
+
+  // ── CATEGORIES sub-panel ──────────────────────────────────────────────
+  // Takes the remaining vertical space via flex:1 on its outer div
+  var catSub = makeSubPanel("Categories", 99999);  // no hard cap; flex handles it
+  catSub.body.style.maxHeight = "";    // remove the cap set in makeSubPanel
+  catSub.body.style.flex      = "1";   // fill remaining space in the column
+  catSub.outer.style.flex     = "1";   // outer also grows
+  catSub.outer.style.minHeight = "0";  // needed for flex children to shrink
+
+  // Select all / Deselect all for Categories
+  var eBtnAll = document.createElement("button");
+  eBtnAll.textContent = "Select all";
+  eBtnAll.style.cssText = PANEL_BTN_CSS;
+  var eBtnNone = document.createElement("button");
+  eBtnNone.textContent = "Deselect all";
+  eBtnNone.style.cssText = PANEL_BTN_CSS;
+  catSub.selRow.appendChild(eBtnAll);
+  catSub.selRow.appendChild(eBtnNone);
+
+  // One checkbox row per entity
+  var checkboxMap = {};      // id → <input>
+  var entityRowMap = {};     // id → label element (for dimming)
+  for (var ei = 0; ei < entities.length; ei++) {
+    var eid    = entities[ei].id;
+    var egrp   = entities[ei].group;
+    var ecolor = groupColors[grpIdx[egrp]] || "#888";
+
+    var row = document.createElement("label");
+    row.style.cssText = [
+      "display:flex", "align-items:center", "gap:5px",
+      "padding:1px 8px",
+      "cursor:pointer", "white-space:nowrap", "overflow:hidden"
+    ].join(";");
+    row.title = eid;
+
+    var cb = document.createElement("input");
+    cb.type    = "checkbox";
+    cb.checked = true;
+    cb.style.cssText = "margin:0;flex-shrink:0;accent-color:" + ecolor + ";cursor:pointer;";
+    cb.dataset.entityId = eid;
+
+    var lbl = document.createElement("span");
+    lbl.textContent = eid;
+    lbl.style.cssText = "font-size:11px;color:#333;overflow:hidden;text-overflow:ellipsis;";
+
+    row.appendChild(cb);
+    row.appendChild(lbl);
+    catSub.body.appendChild(row);
+    checkboxMap[eid]   = cb;
+    entityRowMap[eid]  = row;
+
+    (function(entityId) {
+      cb.addEventListener("change", function() {
+        entityVisible[entityId] = this.checked;
+        renderFrame(parseFloat(slider.value) / 10000);
+      });
+    })(eid);
+  }
+
+  sideColumn.appendChild(catSub.outer);
+
+  // Dim category rows whose color group is currently deselected
+  function updateCategoryRowDimming() {
+    for (var ei2 = 0; ei2 < entities.length; ei2++) {
+      var eid2  = entities[ei2].id;
+      var egrp2 = entities[ei2].group;
+      var rowEl = entityRowMap[eid2];
+      if (!rowEl) continue;
+      rowEl.style.opacity = legendSelected[egrp2] ? "1" : "0.35";
+    }
+  }
+
+  // Mount the column
+  var chartContainer = el.parentNode || el;
+  chartContainer.style.position = "relative";
+  chartContainer.appendChild(sideColumn);
+
+  // Categories Select All / Deselect All
+  eBtnAll.addEventListener("click", function() {
+    for (var ei = 0; ei < entities.length; ei++) {
+      var eid = entities[ei].id;
+      entityVisible[eid] = true;
+      if (checkboxMap[eid]) checkboxMap[eid].checked = true;
+    }
+    renderFrame(parseFloat(slider.value) / 10000);
+  });
+
+  eBtnNone.addEventListener("click", function() {
+    for (var ei = 0; ei < entities.length; ei++) {
+      var eid = entities[ei].id;
+      entityVisible[eid] = false;
+      if (checkboxMap[eid]) checkboxMap[eid].checked = false;
+    }
+    renderFrame(parseFloat(slider.value) / 10000);
+  });
+
+  // Build entity-id -> group lookup for fast access in mouseover
   var entityGroupMap = {};
   for (var e = 0; e < entities.length; e++) {
     entityGroupMap[entities[e].id] = entities[e].group;
@@ -676,6 +942,7 @@ function(el, x) {
       var gi  = grpIdx[ent.group];
       if (gi === undefined) continue;
       if (!legendSelected[ent.group]) continue;
+      if (!entityVisible[ent.id]) continue;
 
       var cur = interpEntity(ent, prog);
       if (!cur) continue;
@@ -829,7 +1096,7 @@ function(el, x) {
           }
         } else {
           pinnedTip.style.left  = "auto";
-          pinnedTip.style.right = "170px";
+          pinnedTip.style.right = "226px";
           pinnedTip.style.top   = "90px";
         }
         pinnedTip.style.display = "block";
@@ -912,11 +1179,7 @@ function(el, x) {
     else renderFrame(parseFloat(slider.value) / 10000);
   });
 
-  // Legend toggle — update legendSelected and re-render
-  chart.on("legendselectchanged", function(params) {
-    legendSelected = params.selected;
-    renderFrame(parseFloat(slider.value) / 10000);
-  });
+  // (legendselectchanged no longer needed — Color panel manages legendSelected directly)
 
   // Click on a bubble — show trails only for that entity; click again to clear.
   // Guard against clicks on trail series (their names start with ".trail_").
