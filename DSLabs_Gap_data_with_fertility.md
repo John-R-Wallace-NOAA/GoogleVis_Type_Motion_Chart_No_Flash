@@ -54,7 +54,6 @@ Life expectancy by fertility
                y            = "life_expectancy",
                size         = "population",
                color        = "continent",
-               x_log        = FALSE,
                duration     = 20000,  # Larger values move the bubbles slower
                trails       = TRUE,
                trail_length = 4,
@@ -84,7 +83,6 @@ Life expectancy by fertility
                y            = "life_expectancy",
                size         = "population",
                color        = "continent",
-               x_log        = FALSE,
                duration     = 20000,
                trails       = TRUE,
                trail_length = nrow(US.Viet),
@@ -110,7 +108,6 @@ Fertility rate vs. infant mortality, sized by population
                  y        = "infant_mortality",
                  size     = "population",
                  color    = "continent",
-                 x_log    = FALSE,
                duration   = 30000,  # Larger values move the bubbles slower
            tooltip_follow = FALSE,
                  theme    = "tech-blue",
