@@ -27,7 +27,7 @@
 #' @param size          Column name (string) for bubble size.  \code{NULL} = uniform size.
 #' @param color         Column name (string) for categorical colour grouping.
 #'                      \code{NULL} = single colour.
-#' @param x_log         Logical.  Use log scale on x-axis?  Default \code{TRUE}.
+#' @param x_log         Logical.  Use log scale on x-axis?  Default \code{FALSE}.
 #' @param y_log         Logical.  Use log scale on y-axis?  Default \code{FALSE}.
 #' @param x_label       X-axis label string.  \code{NULL} = auto title-case of column name.
 #' @param y_label       Y-axis label string.  \code{NULL} = auto title-case of column name.
@@ -117,7 +117,7 @@ motionChart <- function(data,
                         y,
                         size       = NULL,
                         color      = NULL,
-                        x_log      = TRUE,
+                        x_log      = FALSE,
                         y_log      = FALSE,
                         x_label    = NULL,
                         y_label    = NULL,
