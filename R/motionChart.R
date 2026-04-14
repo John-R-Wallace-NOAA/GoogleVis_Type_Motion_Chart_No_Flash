@@ -53,7 +53,7 @@
 #'                      upper-right of the chart area.  If \code{TRUE}, the info box moves
 #'                      smoothly with the selected bubble.
 #' @param title         Optional chart title string.
-#' @param theme         echarts4r theme name.  One of \code{"default"}, \code{"dark"},
+#' @param theme         echarts4r theme name.  E.g. \code{"default"}, \code{"dark"},
 #'                      \code{"vintage"}, \code{"westeros"}, \code{"essos"},
 #'                      \code{"wonderland"}, \code{"walden"}, \code{"chalk"},
 #'                      \code{"infographic"}, \code{"macarons"}, \code{"roma"},
