@@ -75,7 +75,7 @@ GitHub as of early 2026.  This package fills that gap.
 ## Installation
 
 ```r
-# Install remotes if needed
+# Install remotes package if needed
 if (!any(installed.packages()[, 1] %in% "remotes"))
   install.packages("remotes")
 
