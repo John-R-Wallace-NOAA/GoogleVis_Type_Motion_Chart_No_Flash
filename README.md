@@ -1,6 +1,6 @@
 # MotionChart — Flash-Free Animated Motion Charts from R
 Click on the image below for an interactive demo following Hans Rosling's [animated bubble charts](https://www.ted.com/talks/hans_rosling_the_best_stats_you_ve_ever_seen) 
-(the video's audio starts muted).
+(Hans'audio starts muted).
 Use *Ctrl + Click* to start the video (and the demos below) in a new tab or click the back arrow to go back to GitHub within the same tab.
 The demo works well, but in the rare case it appears not to be working correctly or gets stuck, just do a browser page reload.
 [![ ](https://github.com/John-R-Wallace-NOAA/GoogleVis_Type_Motion_Chart_No_Flash/blob/main/Images/Gapminder_LifeExp_vs_Fertility.gif)](https://john-r-wallace-noaa.github.io/GoogleVis_Type_Motion_Chart_No_Flash/Gapmin_LifeExp_vs_Fert_Demo/Life_Fert.htm)
