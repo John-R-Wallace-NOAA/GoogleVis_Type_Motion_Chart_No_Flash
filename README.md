@@ -16,9 +16,9 @@ no browser plugin, no data uploaded anywhere.  All animation runs client-side
 in the browser via a `requestAnimationFrame` loop; data stays local. 
 <br>
 <br>
-Created by brainstorming sessions (8+ hours) with ChatGPT, 
-and having a failed start before deciding the best path forward was to use echarts4r. The heavy lift coding was done by Claude, but I did have
-some good coding inputs. However, I mostly contributed design ideas and what features to add. Claude did lead me astray by finding and quickly
+[Ruffle](https://github.com/ruffle-rs/ruffle) works well for flash based games, but after waiting years it still only works best for basic Flash content and struggles with complex ActionScript, making it unlikely to render the interactive components of a motion chart. Hence I started brainstorming sessions (8+ hours) with ChatGPT, 
+and after a failed attempt, it was decided that the best path forward was to use echarts4r. The heavy lift core coding was done by Claude, but I did have
+some good coding inputs. The design ideas and what features to add beyond what Claude provided has increasingly beeen from me. Also, Claude did lead me astray by finding and quickly
 using an R package that had Gapminder data without fertility information and with data only every 5 years. Without too much effort I found the DSLabs
 R package which had more complete Gapminder data.
 
