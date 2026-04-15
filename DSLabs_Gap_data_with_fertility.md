@@ -110,7 +110,7 @@ Infant mortality vs. fertility rate, sized by population
                duration   = 30000,  # Larger values move the bubbles slower
            tooltip_follow = FALSE,
                  theme    = "tech-blue",
-                 title    = "Fertility & Infant Mortality - After Hans Rosling")   
+                 title    = "Infant Mortality & Fertility - After Hans Rosling")   
                  
       # saveHtmlFolder()
       # openwd()  # To open the copied motion chart go to the newly created HTML folder and doulble-click on 'index.html'
