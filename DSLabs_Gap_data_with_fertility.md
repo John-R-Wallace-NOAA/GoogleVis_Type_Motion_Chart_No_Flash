@@ -97,7 +97,7 @@ Life expectancy by fertility
       # openwd()  # To open the copied motion chart go to the newly created HTML folder and doulble-click on 'index.html'
 <br>
 <br>             
-Fertility rate vs. infant mortality, sized by population
+Infant mortality vs. fertility rate, sized by population
 
 
      motionChart(gap_dslabs,        
