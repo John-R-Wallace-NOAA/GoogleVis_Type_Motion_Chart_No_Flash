@@ -25,7 +25,7 @@ R package which had more complete Gapminder data.
 A strange new world, you direct the process, but sometimes you are just the monkey running code for AI and telling it what you see. If another user needs something customized, 
 one approach is to just fork the repo, upload the necessary code file(s) and tell Claude or another AI what you need.
 
-The examples above and others are in the [DSLabs_Gap_data_with_fertility.md](https://github.com/John-R-Wallace-NOAA/GoogleVis_Type_Motion_Chart_No_Flash/blob/main/DSLabs_Gap_data_with_fertility.md) file.
+The examples above and others are in the [DSLabs_Gap_data_with_fertility.md](https://github.com/John-R-Wallace-NOAA/GoogleVis_Type_Motion_Chart_No_Flash/blob/main/More_Examples/DSLabs_Gap_data_with_fertility.md) file.
 
 ---
 
