@@ -1,5 +1,6 @@
 # MotionChart — Flash-Free Animated Motion Charts from R
-Click on the image for an interactive demo. The demo opens in the current tab, so click the back arrow to go back to GitHub. <br>
+Click on the image for an interactive demo following Hans Rosling's [animated bubble charts](https://www.youtube.com/watch?v=hVimVzgtD6w). 
+The demo opens in the current tab, so click the back arrow to go back to GitHub. <br>
 (The demo works well, but in the rare case it appears not to be working correctly or gets stuck, just do a browser reload.)
 [![ ](https://github.com/John-R-Wallace-NOAA/GoogleVis_Type_Motion_Chart_No_Flash/blob/main/Images/Gapminder_LifeExp_vs_Fertility.gif)](https://john-r-wallace-noaa.github.io/GoogleVis_Type_Motion_Chart_No_Flash/Gapmin_LifeExp_vs_Fert_Demo/Life_Fert.htm)
 <br>
@@ -29,7 +30,7 @@ The examples above and others are in the [DSLabs_Gap_data_with_fertility.md](htt
 
 ## Background
 
-Hans Rosling's [animated bubble charts](https://www.youtube.com/watch?v=hVimVzgtD6w) — popularized by Gapminder and the BBC's
+Hans Rosling's animated bubble charts — popularized by Gapminder and the BBC's
 *Joy of Stats* — were originally powered by Google's Motion Chart, which
 required Adobe Flash.  Flash reached end-of-life in December 2020 and is now
 blocked by every major browser.  The `googleVis` package still carries
