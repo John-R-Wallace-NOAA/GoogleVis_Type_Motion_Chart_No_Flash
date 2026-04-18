@@ -1,4 +1,4 @@
-# MotionChart — Flash-Free Animated Motion Charts from R
+# MotionChart - Flash-Free Animated Motion Charts from R
 Click on the image below for an interactive demo following Hans Rosling's [animated bubble charts](https://www.ted.com/talks/hans_rosling_the_best_stats_you_ve_ever_seen) 
 (Hans' audio starts muted).
 Use *Ctrl + Click* to start the video (and the demos below) in a new tab or click the back arrow to go back to GitHub within the same tab.
